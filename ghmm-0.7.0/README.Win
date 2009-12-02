@@ -1,0 +1,91 @@
+At the moment just static libraries can be build on Windows.
+Dynamic link library (dll) support will be added later.
+
+
+
+Visual C++
+----------
+
+a) Preparing gsl
+
+   The Windows version of gsl 1.0, that can be adapted for
+   Visual C++ can be downloaded from 
+    
+   http://gnuwin32.sourceforge.net/packages/gsl.htm
+
+   Download the Source code package and compile it.
+   Don't forget to copy all header files to the gsl/
+   subdirectory.
+
+   In the following documentation we assume that the gsl 
+   directory is c:\prefix\gsl-1.0\ while prefix depends
+   on the location to which you have unzipped the package.
+   
+
+b) Preparing xmlio & expat
+
+   The c++ wrapper of ghmm (ghmm++) needs the libraries xmlio 
+   and expat. These can be downloaded from:
+
+   http://xmlio.sf.net (download the latest daily snapshot)
+   http://sourceforge.net/projects/expat/ (download the windows binaries)
+
+   The xmlio project contains VisualC snapshot and an
+   instruction file (README.Win).
+
+   Copy both xmlio.lib and expat.lib to the main ghmm directory
+   (the directory that contains README.Win).
+
+   To ensure that the required xmlio header files are found. 
+   Change to ghmmpp project setting and add the include 
+   directory of the xmlio library to C/C++ - Preprocessor - 
+   Additional include dirs (e.g. c:\prefix\xmlio\include).
+
+   You also may add c:\prefix\xmlio\include to the global 
+   search directories of VisualC++, so that xmlio headers will 
+   be found by all of your projects. To do this add 
+   c:\prefix\xmlio\include to tools - directories.
+   
+
+c) Building ghmm.lib / ghmmpp.lib
+
+   Go into the VisualC directory that is created, and 
+   double-click on the VC++ workspace file ghmm.dsw. 
+   This should open up VisualC.
+
+   Now you have to ensure that the required gsl headers
+   are found. Change to ghmm project setting and add
+   the include directory of the gsl library to C/C++ - 
+   Preprocessor - Additional include dirs. 
+
+   You will find the include dirs:
+   ..\..\,..\..\..\gsl-1.0
+   
+   If the prefixes of gsl and ghmm are different you have 
+   to change it to ..\..\,c:\prefix\gsl-1.0\
+
+   You also may add c:\prefix\gsl-1.0\ to the global search 
+   directories of VisualC++, so that gsl headers will be 
+   found by all of your projects. To do this add 
+   c:\prefix\gsl-1.0\ to tools - directories.
+
+   Since gsl.lib is needed for successfully linking our
+   project, copy libgsl.lib to the main ghmm directory
+   (the directory that contains README.Win).
+
+   Now we are ready to build ghmm.lib.
+
+d) Building example programs:
+
+   Project files of some example programs are also included
+   in the ghmm workspace. They should compile without any
+   further adjustments. To run them, go to the appropriate
+   directory (e.g. VisualC/coin_toss_test/Release) and double
+   click the created .exe file.
+
+
+Other Compiler:
+---------------
+
+Also other compiler should work well. But we have not tested
+any so far.

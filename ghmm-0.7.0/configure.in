@@ -1,0 +1,273 @@
+dnl  author       : Achim Gaedke, Peter Pipenbacher
+dnl  filename     : /zpr/bspk/src/hmm/ghmm/configure.in
+dnl  created      : DATE: 2001-04-04
+dnl  $Id: configure.in 1348 2005-09-13 15:03:51Z cic99 $
+dnl Copyright (C) 1998-2005 Alexander Schliep
+dnl Copyright (C) 1998-2001 ZAIK/ZPR, Universitaet zu Koeln
+dnl Copyright (C) 2002-2005 Max-Planck-Institut fuer Molekulare Genetik, Berlin
+dnl 
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl 
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl 
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl 
+dnl 
+dnl 
+
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(ghmm, 0.7)
+AC_CONFIG_SRCDIR(ghmm/smodel.c)
+AM_INIT_AUTOMAKE
+
+AM_CONFIG_HEADER(config.h)
+
+# info from http://www.cl.cam.ac.uk/texinfodoc/libtool_6.html#SEC33
+#
+#current 
+#    The most recent interface number that this library implements. 
+#revision 
+#    The implementation number of the current interface. 
+#age The difference between the newest and oldest interfaces that this 
+#    library implements. In other words, the library implements all the 
+#    interface numbers in the range from number current - age to current. 
+#
+#If two libraries have identical current and age numbers, then the dynamic 
+#linker chooses the library with the greater revision number. 
+#
+#Here are a set of rules to help you update your library version information: 
+#
+#  1. Start with version information of `0:0:0' for each libtool library. 
+#  2. Update the version information only immediately before a public release 
+#     of your software. More frequent updates are unnecessary, and only
+#     guarantee that the current interface number gets larger faster. 
+#  3. If the library source code has changed at all since the last update, 
+#     then increment revision (`c:r:a' becomes `c:r+1:a'). 
+#  4. If any interfaces have been added, removed, or changed since the last 
+#     update, increment current, and set revision to 0. 
+#  5. If any interfaces have been added since the last public release, then 
+#     increment age. 
+#  6. If any interfaces have been removed since the last public release, then 
+#     set age to 0. 
+
+GHMM_VERSION_CURRENT=0
+GHMM_VERSION_REVISION=7
+GHMM_VERSION_AGE=0
+GHMM_VERSION=$GHMM_VERSION_CURRENT.$GHMM_VERSION_REVISION.$GHMM_VERSION_AGE
+AC_SUBST(GHMM_VERSION_CURRENT)
+AC_SUBST(GHMM_VERSION_REVISION)
+AC_SUBST(GHMM_VERSION_AGE)
+
+AM_INIT_AUTOMAKE(ghmm,$GHMM_VERSION)
+dnl implicit in AM_INIT_AUTOMAKE...
+dnl AC_PROG_MAKE_SET
+
+dnl load CXXFLAGS from cache
+if test -z "$CXXFLAGS"; then
+  AC_CACHE_CHECK(for CXXFLAGS, ac_cv_cxxflags,[ac_cv_cxxflags="-O2"]);
+  CXXFLAGS="$ac_cv_cxxflags"
+else
+  ac_cv_cxxflags="$CXXFLAGS"; 
+fi
+
+dnl load CFLAGS from cache
+if test -z "$CFLAGS"; then
+  AC_CACHE_CHECK(for CFLAGS, ac_cv_cflags,[ac_cv_cflags="-O2"]);
+  CFLAGS="$ac_cv_cflags"
+else
+  ac_cv_cflags="$CFLAGS"; 
+fi
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_CXX
+AC_PROG_CXXCPP
+AC_PROG_RANLIB
+AM_PROG_LIBTOOL
+AC_PROG_AWK
+AC_PATH_PROG(RM,rm)
+AC_PATH_PROG(DOCXX,doc++)
+AC_PATH_PROG(LATEX,latex)
+AC_PATH_PROG(DVIPS,dvips)
+
+AC_PATH_PROG(EXPECT_FOR_DEJAGNU,expect)
+AC_PATH_PROG(RUNTEST_FOR_DEJAGNU,runtest)
+
+dnl experimental things can be switched on or off
+AC_ARG_ENABLE(experimental,[  --enable-experimental   enable experimental features],
+if test "x$enable_experimental" != "xno" ; then
+AC_DEFINE_UNQUOTED(__EXPERIMENTAL__,$enable_experimental,include experimental features)
+fi
+)
+
+dnl preparation for c++ use
+AC_LANG_CPLUSPLUS
+AC_CXX_HAVE_STL
+AC_CXX_NAMESPACES
+AC_CHECK_HEADERS(cstdio cstdlib cstring cerrno cmath cstdarg)
+
+XMLIO_CONFIG=""
+AC_ARG_WITH(xmlio,
+[  --with-xmlio=DIR        with xmlio library available at the given prefix],
+[  if test "x$with_xmlio" != "xno" ; then
+     AC_PATH_PROG(XMLIO_CONFIG,xmlio-config,,"$with_xmlio/bin:$PATH")
+  fi
+],
+[
+  AC_PATH_PROG(XMLIO_CONFIG,xmlio-config)
+]
+)
+if test -z "$XMLIO_CONFIG" ; then
+    AC_WARN("no xml support")
+else
+    XMLIO_PREFIX=`$XMLIO_CONFIG --prefix`
+    XMLIO_INCLUDES=`$XMLIO_CONFIG --cppflags`
+    XMLIO_LIBS=`$XMLIO_CONFIG --libs`
+    AC_SUBST(XMLIO_PREFIX)
+    AC_SUBST(XMLIO_INCLUDES)
+    AC_SUBST(XMLIO_LIBS)
+fi
+
+dnl following tests with C
+AC_LANG_C
+dnl aborts on failure
+
+dnl Checks for libraries.
+AC_CHECK_LIB(pthread, pthread_join)
+
+dnl AC_ARG_WITH(expat,
+dnl [  --with-expat=DIR        with expat available at the given prefix],
+dnl [CPPFLAGS="$CPPFLAGS -I$with_expat/include"
+dnl LIBS="$LIBS -L$with_expat/lib"]
+dnl )
+dnl AC_CHECK_HEADERS(expat.h)
+dnl AC_CHECK_LIB(expat,XML_ParserCreate)
+
+dnl something experimental
+dnl if test "x$enable_experimental" = "x1" || test "x$enable_experimental" = "xyes" ; then
+dnl evaluate experimental flags
+dnl fi
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+dnl AC_CHECK_FUNCS(tmpnam mkstemp)
+dnl AC_CHECK_FUNCS(gettimeofday)
+
+#AC_DEFINE(DO_WITH_GSL,1,[use GSL functions instead of ghmm interpolation algorithms])
+AC_ARG_WITH(gsl,
+[  --with-gsl         with gsl library],
+[  if test "x$with_gsl" != "xno" ; then
+     AC_DEFINE(DO_WITH_GSL,1,[use GSL functions instead of ghmm equivalents])
+
+dnl these macros are from acinclude.m4! (modified gsl.m4)
+AM_PATH_GSL(0.7,,AC_MSG_ERROR("GSL Version 0.7 or higher required."))
+LIBS="$LIBS $GSL_LIBS"
+CFLAGS="$CFLAGS $GSL_CFLAGS"
+CXXFLAGS="$CXXFLAGS $GSL_CFLAGS"
+
+dnl checking for gsl_inteval
+AC_MSG_CHECKING([for gsl_inteval])
+AC_TRY_COMPILE([#include <gsl/gsl_roots.h>],
+[
+  gsl_interval x;
+],
+AC_MSG_RESULT(yes)
+AC_DEFINE(HAVE_GSL_INTERVAL,1,[struct gsl_interval exists]),
+AC_MSG_RESULT(no)
+)
+
+dnl checking which root solver alloc function is used
+AC_MSG_CHECKING([whether gsl_root_fsolver_alloc takes one argument])
+AC_TRY_COMPILE([#include <gsl/gsl_roots.h>],
+[
+ gsl_root_fsolver* s;
+ s = gsl_root_fsolver_alloc (gsl_root_fsolver_bisection);
+],
+AC_MSG_RESULT(yes)
+AC_DEFINE(GSL_ROOT_FSLOVER_ALLOC_WITH_ONE_ARG,1,[root solver allocation takes only one argument]),
+AC_MSG_RESULT(no)
+)
+
+dnl checking for gsl_histogram_set_ranges_uniform
+AC_MSG_CHECKING([for gsl_histogram_set_ranges_uniform])
+AC_TRY_LINK([#include <gsl/gsl_histogram.h>],
+[
+ gsl_histogram* h;
+ (void)gsl_histogram_set_ranges_uniform(h,-10.0,10.0);
+],
+AC_MSG_RESULT(yes)
+AC_DEFINE(GSL_HISTOGRAM_SET_RANGES_UNIFORM,1,[gsl_histogram_set_ranges_uniform is defined]),
+AC_MSG_RESULT(no)
+)
+
+dnl checking if gsl_sf_erf exists
+AC_MSG_CHECKING([for gsl_sf_erf])
+AC_TRY_LINK([#include <gsl/gsl_sf.h>],
+[
+ (void)gsl_sf_erf(0.0);
+],
+AC_MSG_RESULT(yes)
+AC_DEFINE(HAVE_GSL_SF_ERF,1,[gsl_sf_erf exists]),
+AC_MSG_RESULT(no)
+)
+
+dnl checking if gsl_sf_erfc exists
+AC_MSG_CHECKING([for gsl_sf_erfc])
+AC_TRY_LINK([#include <gsl/gsl_sf.h>],
+[
+ (void)gsl_sf_erfc(0.0);
+],
+AC_MSG_RESULT(yes)
+AC_DEFINE(HAVE_GSL_SF_ERFC,1,[gsl_sf_erfc exists]),
+AC_MSG_RESULT(no)
+)
+   fi
+],
+[
+    AC_WARN("not using gsl")
+    AC_CHECK_LIB(m, cos)
+]
+)
+
+
+# substitute default prefix here, because I need it now 
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+phi_data_file=`eval echo ${datadir}`/${PACKAGE}/PHI_001_20.dat
+AC_DEFINE_UNQUOTED(PHI_DATA_FILE,"${phi_data_file}")
+
+
+SUBDIRS="ghmm tools tests doc VisualC"
+AC_SUBST(SUBDIRS)
+
+AC_OUTPUT(Makefile \
+doc/Makefile \
+ghmm/Makefile \
+tools/Makefile \
+tests/Makefile \
+tests/data/Makefile \
+doc/docu.dxx \
+tools/ghmm-config \
+VisualC/Makefile \
+VisualC/coin_toss_test/Makefile \
+VisualC/coin_toss_test_pp/Makefile \
+VisualC/ghmm/Makefile \
+VisualC/ghmmpp/Makefile)
+
+

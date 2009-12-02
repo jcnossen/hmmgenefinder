@@ -1,0 +1,86 @@
+normal build instructions:
+==========================
+
+The generic build instructions can be found at INSTALL.
+
+Some mathematic features are included from gsl, the GNU scientific library,
+it is available at sources.redhat.com/gsl . All versions until gsl-0.7 are
+supported now.
+
+The c++ part of this library needs xmlio, that can be found at
+xmlio.sourceforge.net. xmlio depends on expat, that is also available
+at sourceforge.
+
+gsl and expat are distributed with Redhat 7.1 Linux.
+
+so, configure is called with:
+
+./configure --prefix=/as/you/like/it --with-xmlio=/where/xmlio/is/installed \
+--with-gsl=/alternative/gsl/installation
+
+build from cvs:
+===============
+
+0. you need automake, autoconf and m4 from ftp://ftp.gnu.org
+
+1. call autogen.sh
+   (ignore messages like:
+    automake: configure.in: installing `./mkinstalldirs'
+        error while copying
+   )
+
+2. continue with normal build instructions as written in INSTALL
+
+3. tests require DejaGNU (and this requires expect, a tcl based language)
+
+experimental features:
+======================
+
+if some things are experimental and not portable, you can use 
+
+#if __EXPERIMNETAL__ == 1
+
+achim_s_suspicious_code;
+
+#endif
+
+to avoid confusion.
+Activate this code by including the option --enable-experimental=1 in ./configure !
+
+So allocate your number by appending it to the following list:
+
+0: switched on for 0 and all strings that are not a number
+   it will be compiled with --enable-experimental
+1: achim (xml)
+2: achim (cleanup and compartibility)
+3: bernd wichern (sviterbi implementation)
+
+If this code is working, but not tested by everybody, use
+
+#ifdef __EXPERIMENTAL__
+
+code_to_be_tested;
+
+#endif
+
+and everybody can use your feature by setting --enable-experimental .
+
+Contents of this package:
+=========================
+
+ghmm
+The hidden markov model library
+
+doc
+Documentation generated with doc++
+
+tools
+executables that provide usefull functions
+
+tests
+testsuite driven by DejaGNU, some tests are programming examples
+
+ghmm++
+a c++ extension to ghmm with xml read and write support
+ghmm++ depends on xmlio form xmlio.sourceforge.net
+
