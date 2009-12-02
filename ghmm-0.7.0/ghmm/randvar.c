@@ -115,17 +115,14 @@ static double x_PHI_1 = -1.0;
 static double *PHI = NULL;
 
 
-/*static int randvar_read_PHI ()
+static int randvar_read_PHI ()
 {
 # define CUR_PROC "randvar_read_PHI"
   int res = -1;
-  char filename[] = "";//PHI_DATA_FILE;
-
-	printf("randvar_read_PHI doesn't really build well, so aborting now...\n");
-	abort();
+  char filename = "ghmm/PHI_001_20.dat";
+  scanner_t *s = NULL;
 
 //#warning "PHI_DATA_FILE deprecated!"
-  scanner_t *s = NULL;
   s = scanner_alloc (filename);
   if (!s) {
     mes_proc ();
@@ -165,7 +162,6 @@ STOP:
 # undef CUR_PROC
 }       
 
-*/
 
 
 /* randvar_read_PHI */
