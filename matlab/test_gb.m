@@ -1,44 +1,43 @@
 % list proteins of e-coli
 if exist('ecoli', 'var') == 0
     global ecoli;
-    global ecoli_f; % parsed features
 
     ecoli = GetGenbankFile('AE005174');
     disp 'Parsing features...';
-    ecoli_f = featuresparse(ecoli.Features);
+    ecoli.fp = featuresparse(ecoli.Features);
 end
 
-%ListProteins(ecoli_f);
+numGenes = length(ecoli.fp.gene);
+% set a subset of the genes here
+%splitGene = 20;
+splitGene = round(numGenes/2);
+%endGene = 50;
+endGene = numGenes;
 
-% ecoli_f
-genicDNA = [];
-intergenicDNA= [];
-startIndex=1;
-endIndex=length(ecoli_f.gene);
-last=0;
-lenSeq = length(ecoli.Sequence);
-pos = 1;
-for i=startIndex:endIndex
-    gene = ecoli_f.gene(i);
-    startPos=min(gene.Indices);
-    endPos=max(gene.Indices);
-    
-    % add (pos:startPos) to intergenic
-    if (startPos>pos)
-        disp(sprintf('adding intergenic dna: start: %d, end: %d', pos,startPos));
-        intergenicDNA = [intergenicDNA ecoli.Sequence(pos:startPos)];
-        pos = endPos;
-    end
-    
-    disp(sprintf('adding genic dna: start: %d, EndPos: %d', startPos, endPos));
-    geneDNA = ecoli.Sequence(startPos:endPos);
-    genicDNA = [genicDNA geneDNA];
-    last=endPos;
+clear testdata traindata;
+
+% generate test set. The genome is split just after the gene with index 'splitGene'
+disp 'generating test dataset';
+testdata = GenomeCalc(ecoli, 'testdata');
+range = [1 ecoli.fp.gene(splitGene).Indices(2)] ;
+testdata.FilterDNA(range);
+testdata.DispInfo();
+
+% generate training set
+disp 'generating training dataset';
+traindata = GenomeCalc(ecoli, 'traindata');
+range = [ecoli.fp.gene(splitGene).Indices(2)+1 ecoli.fp.gene(endGene).Indices(2)];
+traindata.FilterDNA(range);
+traindata.DispInfo();
+
+genicLen = 0;
+for i=1:length(ecoli.fp.gene)
+    g = ecoli.fp.gene(i);
+    genicLen = genicLen+max(g.Indices)-min(g.Indices);
 end
 
-if (pos<length(ecoli.Sequence))
-    intergenicDNA = [intergenicDNA ecoli.Sequence(pos:lenSeq)];
-end
+disp(sprintf('Genic DNA length:%d. Total len: %d. Gene fraction: %f', ...
+    genicLen, length(ecoli.Sequence), genicLen/length(ecoli.Sequence)));
 
-disp(sprintf('Genic DNA length:%d. End: %d. Gene fraction: %f', length(genicDNA), last, length(genicDNA)/last));
-disp(sprintf('Intergenic DNA length:%d.', length(intergenicDNA)));
+testdata
+traindata
