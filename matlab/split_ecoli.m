@@ -1,3 +1,18 @@
+% Downloads genome name from gene bank and splits it in required proportion
+% into training and test datasets.
+% Input arguments:
+%      [name]         - name of the genome sequence.
+%      [wanted_ratio] - ratio between size of the training set and whole
+%                       genome.
+%      [impTh]        - Internal parameter - sets number of iterations with
+%                       no improvement after which the algorithm
+%                       terminates.
+% Output arguments:
+%       [train]       - Training dataset.
+%       [test]        - Testing dataset.
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% ------------------------------------------------------------------------
 function [train, test] = split_ecoli(name, wanted_ratio, impTh)
     
     % Returns a boolean value - tells us if we can cut the genome at given
@@ -13,15 +28,34 @@ function [train, test] = split_ecoli(name, wanted_ratio, impTh)
         res = true;
     end
 
-    % Returns all genes who start and end in given range
+    % Returns all genes that start and end in given range
     % g   - genes to select from
     % s,f - start and end of allowed nucleotide range
     function [genes] = get_all_genes(g, s, f)
         genes = [];
         n = length(g.gene);
         for gagI = 1 : n
-            if (min(g.gene(gagI).Indices) > s && max(g.gene(gagI).Indices) < f)
+            if (min(g.gene(gagI).Indices) >= s && max(g.gene(gagI).Indices) <= f)
                 genes = [genes g.gene(gagI)];
+            end
+        end
+    end
+
+    % Shifts positions of all genes in f by delta
+    function [f] = shift_genes(f, delta)
+        n = length(f);
+        for sgI = 1:n
+            f(sgI).Indices = f(sgI).Indices - delta;
+        end
+    end
+
+    % Returns number of genes that start and end in given range
+    function [cnt] = count_genes(st, fn)
+        cnt = 0;
+        n = length(f.gene);
+        for cgI = 1 : n
+            if (min(f.gene(cgI).Indices) >= st && max(f.gene(cgI).Indices) <= fn)
+                cnt = cnt + 1;
             end
         end
     end
@@ -31,10 +65,10 @@ function [train, test] = split_ecoli(name, wanted_ratio, impTh)
     end
     
     if (nargin < 2)
-        wanted_ratio = 1;
+        wanted_ratio = 0.5;
     end
     
-    if (nargin < 2)
+    if (nargin < 3)
         impTh = 5;
     end
     
@@ -52,8 +86,8 @@ function [train, test] = split_ecoli(name, wanted_ratio, impTh)
     
     last_impI = 0;
     last_impJ = 0;
-    i = round(n / 2) - 1;
-    j = round(n / 2);
+    i = round(n * wanted_ratio) - 1;
+    j = round(n * wanted_ratio);
     while ((i > 0 && last_impI < impTh) || (j < n && last_impJ < impTh))
         
         if (i > 0 && last_impI < impTh)
@@ -63,7 +97,7 @@ function [train, test] = split_ecoli(name, wanted_ratio, impTh)
             next_start = min(next.Indices);
             middle = round(mean([cur_end next_start]));
             if (can_cut(middle))
-                ratio = middle / (seq_length - middle);
+                ratio = count_genes(1, middle) / length(f.gene);
                 if (abs(ratio - wanted_ratio) < abs(best_ratio - wanted_ratio))
                     best_ratio = ratio;
                     fprintf('[+] (%i) New best ratio attained - %f\n', i, best_ratio);
@@ -83,7 +117,7 @@ function [train, test] = split_ecoli(name, wanted_ratio, impTh)
             next_start = min(next.Indices);
             middle = round(mean([cur_end next_start]));
             if (can_cut(middle))
-                ratio = middle / (seq_length - middle);
+                ratio = count_genes(1, middle) / length(f.gene);
                 if (abs(ratio - wanted_ratio) < abs(best_ratio - wanted_ratio))
                     best_ratio = ratio;
                     fprintf('[+] (%i) New best ratio attained - %f\n', i, best_ratio);
@@ -99,8 +133,10 @@ function [train, test] = split_ecoli(name, wanted_ratio, impTh)
     % BTW, this works only coz the genes are sorted in incresing order of
     % their lower index (lower != first)
     
+    fprintf('[i] Cutting sequence at %i\n', best_position); 
     train.Sequence = g.Sequence(1:best_position);
     train.gene = get_all_genes(f, 1, best_position);
     test.Sequence = g.Sequence(best_position + 1:seq_length);
     test.gene = get_all_genes(f, best_position + 1, seq_length);
+    test.gene = shift_genes(test.gene, best_position);
 end
