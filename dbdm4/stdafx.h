@@ -26,7 +26,6 @@
 #include "ghmm/reestimate.h"
 #include "ghmm/discrime.h"
 #include "ghmm/rng.h"
-#include "ghmm/root_finder.h"
 #include "ghmm/scluster.h"
 #include "ghmm/sdmodel.h"
 #include "ghmm/sdfoba.h"
@@ -42,5 +41,7 @@
 #include "ghmm/viterbi.h"
 
 
+#include "stddefs.h"
 
-
+#include "Utils.h"
+#include "DebugTrace.h"
