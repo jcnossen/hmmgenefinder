@@ -43,7 +43,7 @@ function save_genome(data, filename)
         write_field(g, 'LocusModificationDate');
         write_field(g, 'Definition');
         write_field(g, 'Source');
-        tabs(); fprintf(file, 'SequenceFile = %s\n', seqfilename);
+        tabs(); fprintf(file, 'SequenceFile = "%s"\n', seqfilename);
     end
     
     function write_value(v)
