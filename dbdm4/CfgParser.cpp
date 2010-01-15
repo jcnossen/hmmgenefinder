@@ -334,9 +334,9 @@ void CfgList::Parse (InputBuffer& buf, bool root)
 			return;
 		}
 
-		childs.push_back (CfgListElem());
-
-		childs.back ().Parse (buf);
+		CfgListElem* elem = new CfgListElem(0);
+		elem->Parse(buf);
+		childs.push_back(elem);
 	}
 
 	if (!root && buf.end())
@@ -350,7 +350,7 @@ void CfgList::Write (CfgWriter &w, bool root)
 		w.IncIndent (); w << "\n";
 	}
 	for(CfgList::iterator i = childs.begin(); i != childs.end(); ++i)
-		i->Write (w);
+		(*i)->Write (w);
 	if (!root) {
 		w << '}';
 		w.DecIndent (); w << "\n";
@@ -358,16 +358,16 @@ void CfgList::Write (CfgWriter &w, bool root)
 }
 
 CfgValue* CfgList::Index(int i) {
-	for(CfgList::iterator li=childs.begin();li!=childs.end();++li)
-		if(i--==0) return li->value;
-	return 0;
+	if (i<0||i>=childs.size())
+		return 0;
+	return childs[i]->value;
 }
 
 CfgValue* CfgList::GetValue (const char *name)
 {
 	for(CfgList::iterator li=childs.begin();li!=childs.end();++li)
-		if (!STRCASECMP (li->name.c_str(), name))
-			return li->value;
+		if (!STRCASECMP ((*li)->name.c_str(), name))
+			return (*li)->value;
 	return 0;
 }
 
@@ -410,12 +410,13 @@ void CfgList::dbgPrint(int depth)
 
 	for (CfgList::iterator i = childs.begin(); i != childs.end(); ++i)
 	{
+		CfgListElem *e=*i;
 		for (int a=0;a<depth;a++)
 			d_trace("  ");
-		d_trace("List element(%d): %s", n++, i->name.c_str());
-		if (i->value) {
+		d_trace("List element(%d): %s", n++, e->name.c_str());
+		if (e->value) {
 			d_trace(" = ");
-			i->value->dbgPrint (depth+1);
+			e->value->dbgPrint (depth+1);
 		} else
 			d_trace("\n");
 	}
@@ -425,25 +426,21 @@ void CfgList::Add(const char *name, const char *val)
 {
 	CfgLiteral *l=new CfgLiteral;
 	l->value = val;
-	childs.push_back(CfgListElem());
-	childs.back().value=l;
-	if (name)
-		childs.back().name=name;
+	Add(name, l);
 }
 
 void CfgList::Add(const char *name, double val)
 {
 	CfgNumeric *n=new CfgNumeric;
-	n->value=val;
-	childs.push_back(CfgListElem());
-	childs.back().value=n;
-	if (name) childs.back().name=name;
+	Add(name, n);
 }
 
 void CfgList::Add (const char *name,CfgValue *val)
 {
-	childs.push_back(CfgListElem());
-	childs.back().value=val;
-	if (name) childs.back().name=name;
+	childs.push_back(new CfgListElem(val, name));
 }
 
+CfgList::~CfgList()
+{
+	DeleteAll(childs);
+}

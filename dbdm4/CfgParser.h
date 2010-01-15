@@ -66,7 +66,7 @@ protected:
 class CfgListElem
 {
 public:
-	CfgListElem() { value=0; }
+	CfgListElem(CfgValue* v, const char* n=0) { value=v; if(n) name=n; }
 	~CfgListElem() { if (value) delete value; }
 	void Parse (InputBuffer& buf);
 	void Write (CfgWriter& w);
@@ -79,6 +79,8 @@ public:
 class CfgList : public CfgValue
 {
 public:
+	~CfgList();
+
 	void Parse (InputBuffer& buf, bool root);
 	void Parse (InputBuffer& buf) { return Parse (buf, false); }
 	void Write (CfgWriter& w) { Write(w,false); }
@@ -107,7 +109,7 @@ public:
 	void Add (double val) { Add(0, val); }
 	void Add (CfgValue *val) { Add(0, val); }
 
-	typedef std::list<CfgListElem> ChildList;
+	typedef std::vector<CfgListElem*> ChildList;
 	ChildList childs;
 	typedef ChildList::iterator iterator;
 

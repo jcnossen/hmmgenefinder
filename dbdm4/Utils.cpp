@@ -35,6 +35,31 @@ std::string SPrintf(const char *fmt, ...) {
 	return buf;
 }
 
+std::string GetDirPath( std::string file )
+{
+	int i=file.size()-1; 
+	while(i>0 && file[i]!='\\' && file[i]!='/')
+		i--;
+	return file.substr(0, i+1);
+}
+
+std::string ReadTextFile( std::string file )
+{
+	FILE * f = fopen(file.c_str(), "r");
+	if (!f)
+		throw ContentException("Unable to open file " + file);
+
+	fseek(f, 0, SEEK_END);
+	int len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	// Needs unicode fix?
+	std::string r;
+	r.resize(len);
+	fgets(&r[0], len, f);
+	fclose(f);
+	return r;
+}
+
 //-------------------------------------------------------------------------
 // InputBuffer - serves as an input for the config value nodes
 //-------------------------------------------------------------------------

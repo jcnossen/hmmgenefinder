@@ -32,4 +32,5 @@ struct InputBuffer
 std::string ReadZStr(FILE *f);
 void WriteZStr(FILE *f, const std::string& s);
 std::string SPrintf(const char *fmt, ...);
-
+std::string GetDirPath(std::string file); // strip filename
+std::string ReadTextFile(std::string file);

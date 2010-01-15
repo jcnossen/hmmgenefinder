@@ -1,3 +1,13 @@
+#include "stdafx.h"
+
+
+#include "HMM.h"
+
+
+
+
+/*
+
 % Base class for HMM models
 % ------------------------------------------------------------------------
 % DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
@@ -441,3 +451,4 @@ classdef (ConstructOnLoad = false) HMM < handle
         
     end
 end
+*/
