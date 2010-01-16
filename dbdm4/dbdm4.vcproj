@@ -179,10 +179,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Genome.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -209,11 +205,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\Genome.h"
-				>
-			</File>
-			<File
-				RelativePath=".\math.h"
+				RelativePath=".\mvec.h"
 				>
 			</File>
 			<File
@@ -269,6 +261,30 @@
 			<File
 				RelativePath=".\HMM.h"
 				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Genome"
+			>
+			<File
+				RelativePath=".\Genome.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Genome.h"
+				>
+			</File>
+			<File
+				RelativePath=".\split_ecoli.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<File
