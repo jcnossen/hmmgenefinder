@@ -61,8 +61,8 @@ protected:
 	inline static ptr_t RMove (ptr_t f, ptr_t l, ptr_t r) { for(r+=(l--)-f;l>=f;l--,r--) { Constr(r,*l); Destr(l); } return r; }
 public:
 	mvec() { First=Last=End=0; }
-	mvec(const mvec<T>& c) { First=Last=End=0; copy_from(c); }
-	~mvec() { erase(begin(),end()); MFree(First,End-First); }
+	mvec(const mvec<T>& c) { First=Last=End=0; set(c); }
+	~mvec() { erase(begin(),end()); MFree(First,End-First); First=End=Last=0; }
 
 	iterator begin() { return First; }
 	iterator end() { return Last; }
@@ -117,9 +117,11 @@ public:
 			reserve(n); for(;Last!=End;++Last) Constr(Last, v);
 		} else erase (First+n,Last);
 	}
-	void copy_from(const mvec<T>& v)
+	template<typename TOther>
+	void set(const mvec<TOther>& v)
 	{
-		if(&v==this) return;
+		if((void*)&v==(void*)this) 
+			return;
 		clear();reserve(v.size());
 		Last=UCopy(v.First,v.Last,First);
 	}
@@ -150,7 +152,9 @@ public:
 	T& operator()(size_t i) { return First[i-1]; }
 	const T& operator()(size_t i) const { return First[i-1]; }
 
-	mvec<T>& operator=(const mvec<T>& v) { copy_from(v); return *this; }
+	// For reasons beyond my C++ skills, we need 2 =operators here
+	mvec<T>& operator=(const mvec<T>& v) { set(v); return *this; }
+	template<typename B> mvec<T>& operator=(const B& v) { set(v); return *this; }
 
 	template<typename other_iterator> void add(other_iterator f, other_iterator l)
 	{

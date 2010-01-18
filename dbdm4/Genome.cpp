@@ -34,12 +34,8 @@ Genome::Genome(std::string file)
 	rRNA = LoadFeatureList<Feature>(features->GetList("rRNA"));
 	misc_RNA = LoadFeatureList<Feature>(features->GetList("misc_RNA"));
 	misc_feature = LoadFeatureList<Feature>(features->GetList("misc_feature"));
-	
-	genes.insert(genes.begin(), proteins.begin(), proteins.end());
-	genes.insert(genes.begin(), tRNA.begin(), tRNA.end());
-	genes.insert(genes.begin(), rRNA.begin(), rRNA.end());
-	genes.insert(genes.begin(), misc_RNA.begin(), misc_RNA.end());
-	genes.insert(genes.begin(), misc_feature.begin(), misc_feature.end());
+
+	genes = tRNA & rRNA & misc_RNA & misc_feature & proteins;
 
 	delete d;
 }
