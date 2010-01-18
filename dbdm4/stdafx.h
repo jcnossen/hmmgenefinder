@@ -6,6 +6,9 @@
 #pragma once
 
 #include <stdio.h>
+#include <float.h>
+#include <math.h>
+
 #include "ghmm/ghmm.h"
 #include "ghmm/model.h"
 #include "ghmm/modelutil.h"

@@ -1,7 +1,39 @@
+/* 
+Matlab style vector class
+Copyright 2010, Jelmer Cnossen
+
+
+This class tries to support matlab style vectors by
+
+- allowing +-/* operators on combinations of vector,vector and vector,scalar
+- using the () operators for indexing with first index 1
+- implementing max, min, mean, sum functions that operate on the mvec instances
+
+However since there is no .* operator in C++, inproducts require regular functions and can't be done with *
+Also for similar reasons, concatenation is done with & operator instead of [a b]
+*/
 #pragma once
 
+template<typename T> class type_traits {};
+template<> class type_traits<float> {
+public:
+	static float zero() { return 0.0f; }
+};
+template<> class type_traits<int> {
+public:
+	static int zero() { return 0; }
+};
+template<> class type_traits<double> {
+public:
+	static double zero() { return 0.0; }
+};
+template<typename T> class type_traits<T*> {
+public:
+	static T* zero() { return NULL; }
+	typedef T value_type;
+};
 
-template<class T>
+template<typename T>
 class mvec
 {
 public:
@@ -18,11 +50,13 @@ protected:
 	inline static void Destr (ptr_t ptr) { (ptr)->~T(); }
 
 	// plain memory alloc/free, should not call destructors
-	inline static ptr_t MAlloc (size_t n) { return (ptr_t)new char(n*sizeof(T)); }
+	inline static ptr_t MAlloc (size_t n) { return (ptr_t)new char[n*sizeof(T)]; }
 	inline static void MFree (ptr_t p, size_t n) { char* c = (char*)p; delete[] c; } //(p,n*sizeof(T)); }
 
+	// use operator=
 	inline static ptr_t Copy (ptr_t f, ptr_t l, ptr_t r) { for(;f!=l;++f,++r) *r=*f; return r; }
-	inline static ptr_t UCopy (ptr_t f, ptr_t l, ptr_t r) { for(;f!=l;++f,++r) Constr(r,*f); return r; }
+	// use copy contructor (for uninitialized memory)
+	template<typename TSrc> inline static ptr_t UCopy (TSrc* f, TSrc* l, ptr_t r) { for(;f!=l;++f,++r) Constr(r,*f); return r; }
 	inline static ptr_t Move (ptr_t f, ptr_t l, ptr_t r) { for(;f!=l;++f,++r) { Constr(r,*f); Destr(f); } return r; }
 	inline static ptr_t RMove (ptr_t f, ptr_t l, ptr_t r) { for(r+=(l--)-f;l>=f;l--,r--) { Constr(r,*l); Destr(l); } return r; }
 public:
@@ -58,21 +92,22 @@ public:
 		else Last=F;
 	}
 	void erase(iterator P) { erase(P,P+1); }
-	void insert (iterator P, iterator F, iterator L)
+	template<typename SrcIterator>
+	void insert (iterator P, SrcIterator F, SrcIterator L)
 	{
-		if (End > Last - F + L) {
-			RMove (P, Last, P - F + L);
+		if (End - Last > L - F) { // room left for new items
+			RMove (P, Last, P + (L - F)); // move [P, Last) to P + (L-F). IAW make room for new items
 			UCopy (F, L, P);
 			Last += L-F;
 		} else {
-			ptr_t Ln, New = MAlloc (size() + (L - F));
+			int n = size() + (L-F);
+			ptr_t Ln, New = MAlloc (n);
 			Ln = New;
 			if (P > First) Ln = Move (First, P, Ln);
 			Ln = UCopy (F, L, Ln);
-			if (P < Last) Move (P, Last, Ln);
-			MFree (First, size());
-			End += New - First;
-			Last = Ln;
+			if (P < Last) Ln = Move (P, Last, Ln);
+			if (First) MFree (First, size());
+			Last = End = New + n; // Ln = End+n
 			First = New;
 		}
 	}
@@ -95,11 +130,17 @@ public:
 	const T& front() const { return *First; }
 
 	// concatenation
-	mvec operator&(const mvec& rhs)
+	template<typename TSrcContainer>
+	mvec operator&(const TSrcContainer& rhs) const
 	{
 		mvec r(*this);
 		r.add(rhs.begin(), rhs.end());
 		return r;
+	}
+	template<typename TSrcContainer>
+	mvec& operator&=(const TSrcContainer& rhs) {
+		add(rhs.begin(), rhs.end());
+		return *this;
 	}
 
 	// C++ style indexing
@@ -120,6 +161,15 @@ public:
 		mvec<R> r(size());
 		for(int i=0;i<size();i++)
 			r[i]=(R)First[i];
+		return r;
+	}
+
+	// Assumes object container
+	mvec clone() {
+		mvec r;
+		r.reserve(size());
+		for(iterator i=First;i!=Last;++i)
+			r.push_back(new type_traits<T>::value_type(**i));
 		return r;
 	}
 
@@ -148,4 +198,74 @@ template<typename T> T min(const mvec<T>& m) {
 		v=std::min(v, *i); 
 	return v;
 }
+template<typename T> T sum(const mvec<T>& m) {
+	if (m.empty())
+		throw std::invalid_argument("sum() called on empty mvec");
 
+	T v=type_traits<T>::zero;
+	for(mvec<T>::const_iterator i=m.begin();i!=m.end();++i)
+		v+=*i;
+	return v;
+}
+template<typename T> float mean(const mvec<T>& m) {
+	return sum(m) / (float)m.size();
+}
+
+namespace ops {
+	template<typename A, typename B> struct add { static A apply(A a, B b) { return a+b; } 	};
+	template<typename A, typename B> struct sub { static A apply(A a, B b) { return a-b; } 	};
+	template<typename A, typename B> struct mul { static A apply(A a, B b) { return a*b; } 	};
+	template<typename A, typename B> struct div { static A apply(A a, B b) { return a/b; } 	};
+	// reverse order apply
+	template<typename A, typename B, typename Op> struct rev { static A apply(A a, B b) { return Op::apply(b, a); } };
+};
+
+template<typename TR, typename TA, typename TB> 
+class operator_helper {
+public:
+	template<typename TOperation>
+	static mvec<TR> apply(const mvec<TA>& a, TB b) {
+		mvec<TR> r; r.reserve(a.size());
+		for(mvec<TA>::const_iterator p=a.begin();p!=a.end();++p)
+			r.push_back( TOperation::apply((*p), b) );
+		return r;
+	}
+};
+template<typename TR, typename TA, typename TVec> 
+class operator_helper<TR, TA, const mvec<TVec>& > { // specialization for container
+public:
+	template<typename TOperation>
+	static mvec<TR> apply(const mvec<TA>& a, const mvec<TVec>& b) {
+		mvec<TR> r; r.reserve(a.size());
+		if (b.size() != a.size()) 
+			throw std::invalid_argument("mvec sizes do not match for elementwise operation");
+		for (int x=0;x<a.size();x++)
+			r.push_back(TOperation::apply(a[x], b[x]));
+		return r;
+	}
+};
+
+#define OPERATOR_IMPL(SYM, OP) \
+template<typename T> static mvec<T> operator SYM(const mvec<T>& c, const mvec<T>& v) { \
+	return operator_helper<T, T, const mvec<T>&>::apply<ops::OP<T, T> >(c, v); \
+} \
+template<typename T, typename B> static mvec<T> operator SYM(const mvec<T>& c, B v) { \
+	return operator_helper<T, T, B>::apply<ops::OP<T, B> >(c, v); \
+} \
+template<typename T, typename B> static mvec<T> operator SYM(B v, const mvec<T>& c) { \
+	return operator_helper<T, T, B>::apply< \
+		ops::rev<T, B, ops::OP<B, T> > \
+	>(c, v); \
+}
+
+OPERATOR_IMPL(+, add)
+OPERATOR_IMPL(-, sub)
+OPERATOR_IMPL(*, mul)
+OPERATOR_IMPL(/, div)
+
+#undef OPERATOR_IMPL
+
+
+typedef mvec<float> mvecf;
+typedef mvec<int> mveci;
+typedef mvec<double> mvecd;

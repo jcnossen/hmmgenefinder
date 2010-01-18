@@ -274,18 +274,6 @@
 				RelativePath=".\Genome.h"
 				>
 			</File>
-			<File
-				RelativePath=".\split_ecoli.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
 		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"
