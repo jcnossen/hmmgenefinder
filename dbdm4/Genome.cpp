@@ -42,9 +42,9 @@ Genome::Genome(std::string file)
 
 
 template<typename T> 
-mvec<typename T*> Genome::LoadFeatureList( CfgList* l )
+mvec<T*> Genome::LoadFeatureList( CfgList* l )
 {
-	mvec<typename T*> features;
+	mvec<T*> features;
 	features.reserve(l->childs.size());
 
 	for(CfgList::iterator li = l->begin(); li != l->end(); ++li) {

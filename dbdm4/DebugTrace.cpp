@@ -33,10 +33,8 @@ void d_puts (const char *buf)
 	OutputDebugStringA(buf);
 #endif
 
-#ifdef WIN32
-	printf (buf);
-#endif
-
+	fputs(buf, stderr);
+	
 	if (!logFile.empty()) {
 		// assuming app can crash at any time, its better to open and close then to keep the file open.
 		FILE *f = fopen(logFile.c_str(), "a");

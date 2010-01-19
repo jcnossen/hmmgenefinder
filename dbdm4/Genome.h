@@ -59,7 +59,7 @@ private:
 	// s,f - start and end of allowed nucleotide range
 	template<typename T> static mvec<T*> GetGenesInNucleotideRange(mvec<T*> src, int s, int f);
 
-	template<typename T> mvec<typename T*> LoadFeatureList(CfgList* l);
+	template<typename T> mvec<T*> LoadFeatureList(CfgList* l);
 
 
 // 	% Returns number of genes that start and end in given range

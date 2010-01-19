@@ -10,7 +10,7 @@
 int main(int argc, char* argv[])
 {
 	try {
-		Genome genome ("..\\data\\AE005174.gd");
+		Genome genome ("../data/AE005174.gd");
 
 		genome.PrintInfo();
 

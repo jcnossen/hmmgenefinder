@@ -120,10 +120,12 @@ CfgValue* CfgValue::ParseValue (InputBuffer& buf)
 		case CT_COMMAND: {
 			++buf;
 			std::string cmd = buf.parseIdent();
-			if (cmd == "include")
+			d_trace("Cmd: %s\n", cmd.c_str());
+			if (cmd == "include") {
 				return LoadNestedFile(buf);
-			else
-				throw ContentException(buf.location() + "Unknown command " + cmd);
+			} else {
+				throw ContentException(SPrintf("%s. Unknown command: %s", buf.location().c_str() ,cmd.c_str()));
+			}
 		}
 		case CT_IDENT:
 			throw ContentException(buf.location() + SPrintf("Unexpected identifier: '%s'", buf.parseIdent()) );
