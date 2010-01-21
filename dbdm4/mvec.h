@@ -8,6 +8,7 @@ This class tries to support matlab style vectors by
 - allowing +-/* operators on combinations of vector,vector and vector,scalar
 - using the () operators for indexing with first index 1
 - implementing max, min, mean, sum functions that operate on the mvec instances
+- members() and members_ptr() function, to replace matlabs [array.member]
 
 However since there is no .* operator in C++, inproducts require regular functions and can't be done with *
 Also for similar reasons, concatenation is done with & operator instead of [a b]
@@ -177,6 +178,19 @@ public:
 		return r;
 	}
 
+	// overloaded -> to assign to set of pointers
+	template<typename V>
+	void ptr_assign(const mvec<V>& vals) {
+		assert(vals.size()==size());
+		for(int i=0;i<size();i++)
+			*(First[i])=vals[i];
+	}
+	template<typename V>
+	void ptr_assign(const V& val) {
+		for(int i=0;i<size();i++)
+			*(First[i])=val;
+	}
+
 public:
 	ptr_t First,
 		Last, // Last points to the first unused entry (the one after the last entry)
@@ -206,7 +220,7 @@ template<typename T> T sum(const mvec<T>& m) {
 	if (m.empty())
 		throw std::invalid_argument("sum() called on empty mvec");
 
-	T v=type_traits<T>::zero;
+	T v=type_traits<T>::zero();
 	for(typename mvec<T>::const_iterator i=m.begin();i!=m.end();++i)
 		v+=*i;
 	return v;
@@ -215,30 +229,112 @@ template<typename T> float mean(const mvec<T>& m) {
 	return sum(m) / (float)m.size();
 }
 
-namespace ops {
-	template<typename A, typename B> struct add { static A apply(A a, B b) { return a+b; } 	};
-	template<typename A, typename B> struct sub { static A apply(A a, B b) { return a-b; } 	};
-	template<typename A, typename B> struct mul { static A apply(A a, B b) { return a*b; } 	};
-	template<typename A, typename B> struct div { static A apply(A a, B b) { return a/b; } 	};
+template<typename T, typename T2, typename TMember> mvec<TMember> members(typename const mvec<T*>& src, TMember T2::*member) {
+	mvec<TMember> r; r.reserve(src.size());
+	for(int i=0;i<src.size();i++)
+		r.push_back(src[i]->*member);
+	return r;
+}
+
+template<typename T, typename T2, typename TMember> mvec<TMember> members(typename const mvec<T>& src, TMember T2::*member) {
+	mvec<TMember> r; r.reserve(src.size());
+	for(int i=0;i<src.size();i++)
+		r.push_back(src[i].*member);
+	return r;
+}
+
+template<typename T, typename T2, typename TMember> mvec<TMember*> members_ptr(typename mvec<T*>& src, TMember T2::*member) {
+	mvec<TMember*> r; r.reserve(src.size());
+	for(int i=0;i<src.size();i++)
+		r.push_back(&( (src[i])->*member ));
+	return r;
+}
+
+template<typename T, typename T2, typename TMember> mvec<TMember*> members_ptr(typename mvec<T>& src, TMember T2::*member) {
+	mvec<TMember*> r; r.reserve(src.size());
+	for(int i=0;i<src.size();i++)
+		r.push_back(&src[i].*member);
+	return r;
+}
+
+template<typename T>
+typename mvec<T>& operator|=(mvec<T>& ptrs, const mvec< typename type_traits<T>::value_type >& values ) {
+	ptrs.ptr_assign(values);
+	return ptrs;
+}
+template<typename T, typename B>
+typename mvec<T>& operator|=(mvec<T>& ptrs, const B& val) {
+	ptrs.ptr_assign(val);
+	return ptrs;
+}
+
+
+namespace mvec_ops {
+	template<typename A, typename B> struct add { 
+		typedef A return_type;
+		static A apply(A a, B b) { return a+b; } 	
+	};
+	template<typename A, typename B> struct sub { 
+		typedef A return_type;
+		static A apply(A a, B b) { return a-b; } 	
+	};
+	template<typename A, typename B> struct mul { 
+		typedef A return_type;
+		static A apply(A a, B b) { return a*b; } 	
+	};
+	template<typename A, typename B> struct div { 
+		typedef A return_type;
+		static A apply(A a, B b) { return a/b; } 	
+	};
 	// reverse order apply
-	template<typename A, typename B, typename Op> struct rev { static A apply(A a, B b) { return Op::apply(b, a); } };
+	template<typename A, typename B, typename Op> struct rev { 
+		typedef typename Op::return_type return_type;
+		static A apply(A a, B b) { return Op::apply(b, a); } 
+	};
+	template<typename A, typename B> struct eq {
+		typedef int return_type;
+		static int apply(A a, B b) { return a==b ? 1 : 0; }
+	};
+	template<typename A, typename B> struct neq {
+		typedef int return_type;
+		static int apply(A a, B b) { return a!=b ? 1 : 0; }
+	};
+	template<typename A, typename B> struct ge {
+		typedef int return_type;
+		static int apply(A a, B b) { return a>=b ? 1 : 0; }
+	};
+	template<typename A, typename B> struct le {
+		typedef int return_type;
+		static int apply(A a, B b) { return a<=b ? 1 : 0; }
+	};
+	template<typename A, typename B> struct l_or {
+		typedef int return_type;
+		static int apply(A a, B b) { return a||b ? 1 : 0; }
+	};
+	template<typename A, typename B> struct l_and {
+		typedef int return_type;
+		static int apply(A a, B b) { return a&&b ? 1 : 0; }
+	};
 };
 
 template<typename TA, typename TB, typename TOperatorType> 
 class operator_helper {
 public:
-	static mvec<TA> apply(const mvec<TA>& a, TB b) {
-		mvec<TA> r; r.reserve(a.size());
+	typedef typename TOperatorType::return_type RT;
+	static mvec<RT> apply(const mvec<TA>& a, TB b) {
+		mvec<RT> r; r.reserve(a.size());
 		for(typename mvec<TA>::const_iterator p=a.begin();p!=a.end();++p)
 			r.push_back( TOperatorType::apply((*p), b) );
 		return r;
 	}
 };
+
 template<typename TA, typename TVec, typename TOperatorType>
 class operator_helper<TA, const mvec<TVec>&, TOperatorType > { // specialization for container
 public:
-	static mvec<TA> apply(const mvec<TA>& a, const mvec<TVec>& b) {
-		mvec<TA> r; r.reserve(a.size());
+	typedef typename TOperatorType::return_type RT;
+	static mvec<RT> apply(const mvec<TA>& a, const mvec<TVec>& b) {
+		mvec<RT> r; r.reserve(a.size());
 		if (b.size() != a.size()) 
 			throw std::invalid_argument("mvec sizes do not match for elementwise operation");
 		for (int x=0;x<a.size();x++)
@@ -247,22 +343,29 @@ public:
 	}
 };
 
+
 #define OPERATOR_IMPL(SYM, OP) \
-template<typename T> static mvec<T> operator SYM(const mvec<T>& c, const mvec<T>& v) { \
-	return operator_helper<T, const mvec<T>&, ops::OP<T,T> >::apply(c,v); \
-}  \
-template<typename T, typename B> static mvec<T> operator SYM(const mvec<T>& c, B v) { \
-	return operator_helper<T, B, ops::OP<T, B> >::apply(c, v);  \
-} \
-template<typename T, typename B> static mvec<T> operator SYM(B v, const mvec<T>& c) { \
-	typedef ops::rev<T, B, ops::OP<B,T> > operator_t;  \
-	return operator_helper<T, B, operator_t>(c,v); \
+template<typename T> static typename mvec< typename mvec_ops::OP<T,T>::return_type > operator SYM(const mvec<T>& c, const mvec<T>& v) {	\
+	return operator_helper<T, const mvec<T>&, mvec_ops::OP<T,T> >::apply(c,v);	\
+}	\
+template<typename T, typename B> static typename mvec< typename mvec_ops::OP<T,B>::return_type > operator SYM(const mvec<T>& c, B v) {	\
+	return operator_helper<T, B, mvec_ops::OP<T, B> >::apply(c, v);	\
+}	\
+template<typename T, typename B> static typename mvec< typename mvec_ops::OP<T,B>::return_type> operator SYM(B v, const mvec<T>& c) {	\
+	typedef mvec_ops::rev<T, B, mvec_ops::OP<B,T> > operator_t;	\
+	return operator_helper<T, B, operator_t>(c,v);	\
 }
 
 OPERATOR_IMPL(+, add)
 OPERATOR_IMPL(-, sub)
 OPERATOR_IMPL(*, mul)
 OPERATOR_IMPL(/, div)
+OPERATOR_IMPL(==, eq)
+OPERATOR_IMPL(!=, neq)
+OPERATOR_IMPL(>=, ge)
+OPERATOR_IMPL(<=, le)
+OPERATOR_IMPL(||, l_or)
+OPERATOR_IMPL(&&, l_and)
 
 #undef OPERATOR_IMPL
 

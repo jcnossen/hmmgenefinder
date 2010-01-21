@@ -29,11 +29,20 @@ Genome::Genome(std::string file)
 
 	// load features
 	CfgList* features = d->GetList("features");
-	proteins = LoadFeatureList<FeatureProtein>(features->GetList("CDS"));
-	tRNA = LoadFeatureList<Feature>(features->GetList("tRNA"));
-	rRNA = LoadFeatureList<Feature>(features->GetList("rRNA"));
-	misc_RNA = LoadFeatureList<Feature>(features->GetList("misc_RNA"));
-	misc_feature = LoadFeatureList<Feature>(features->GetList("misc_feature"));
+	mvec<FeatureProtein*> proteins = LoadFeatureList<FeatureProtein>(features->GetList("CDS"));
+	members_ptr(proteins, &FeatureProtein::type) |= FeatureProtein::Type_Protein;
+	
+	mvec<Feature*> tRNA = LoadFeatureList<Feature>(features->GetList("tRNA"));
+	members_ptr(tRNA, &Feature::type).ptr_assign(Feature::Type_tRNA);
+
+	mvec<Feature*> rRNA = LoadFeatureList<Feature>(features->GetList("rRNA"));
+	members_ptr(rRNA, &Feature::type).ptr_assign(Feature::Type_rRNA);
+
+	mvec<Feature*> misc_RNA = LoadFeatureList<Feature>(features->GetList("misc_RNA"));
+	members_ptr(misc_RNA, &Feature::type).ptr_assign(Feature::Type_MiscRNA);
+
+	mvec<Feature*> misc_feature = LoadFeatureList<Feature>(features->GetList("misc_feature"));
+	members_ptr(misc_feature, &Feature::type).ptr_assign(Feature::Type_MiscFeature);
 
 	genes = tRNA & rRNA & misc_RNA & misc_feature & proteins;
 
@@ -63,11 +72,12 @@ void Genome::PrintInfo()
 {
 	d_trace("Genome %s contains: \n", name.c_str());
 	d_trace("\t%d nucleotides\n", sequence.size());
-	d_trace("\t%d proteins\n", proteins.size());
-	d_trace("\t%d tRNA parts\n", tRNA.size());
-	d_trace("\t%d rRNA parts\n", rRNA.size());
-	d_trace("\t%d misc. RNA\n", misc_RNA.size());
-	d_trace("\t%d misc. features\n", misc_feature.size());
+
+	d_trace("\t%d proteins\n", sum(members(genes, &Feature::type) == Feature::Type_Protein));
+	d_trace("\t%d tRNA parts\n", sum(members(genes, &Feature::type) == Feature::Type_tRNA));
+	d_trace("\t%d rRNA parts\n", sum(members(genes, &Feature::type) == Feature::Type_rRNA));
+	d_trace("\t%d misc. RNA\n", sum(members(genes, &Feature::type) == Feature::Type_MiscRNA));
+	d_trace("\t%d misc. features\n", sum(members(genes, &Feature::type) == Feature::Type_MiscFeature));
 }
 
 
@@ -181,13 +191,8 @@ Genome* Genome::GetSubset( int s, int f)
 	g->filename = filename;
 	g->modificationDate = modificationDate;
 
-	g->proteins = GetGenesInNucleotideRange<FeatureProtein>(proteins, s,f).clone();
-	g->rRNA = GetGenesInNucleotideRange<Feature>(rRNA, s,f).clone();
-	g->tRNA = GetGenesInNucleotideRange<Feature>(tRNA, s,f).clone();
-	g->misc_RNA = GetGenesInNucleotideRange<Feature>(misc_RNA, s,f).clone();
-	g->misc_feature = GetGenesInNucleotideRange<Feature>(misc_feature, s,f).clone();
+	g->genes = GetGenesInNucleotideRange<Feature>(genes, s,f).clone();
 
-	g->genes = g->rRNA & g->tRNA & g->misc_RNA & g->misc_feature & g->proteins;
 	// shift genes
 	for(int i=1;i<=g->genes.size();++i)
 		g->genes(i)->indices = g->genes(i)->indices - (s-1); // FIXED? it should be the nucleotides before best_position, which is best_position-1
@@ -209,6 +214,13 @@ FeatureProtein::FeatureProtein( CfgList* d ) : Feature(d)
 	codonStart = d->GetInt("codon_start");
 	proteinID = d->GetLiteral("protein_id");
 	translation = d->GetLiteral("translation");
+
+	type = Feature::Type_Protein;
+}
+
+Feature* FeatureProtein::Clone()
+{
+	return new FeatureProtein(*this);
 }
 
 Feature::Feature( CfgList* d )
@@ -224,3 +236,7 @@ Feature::Feature( CfgList* d )
 	indices.push_back((int)((CfgNumeric*) indexList->childs[1]->value)->value);
 }
 
+Feature* Feature::Clone()
+{
+	return new Feature(*this);
+}

@@ -9,14 +9,20 @@ class Feature
 {
 public:
 	Feature(CfgList* d);
+	virtual Feature* Clone();
 
 	mvec<int> indices;
 	std::string gene, note, func, locusTag, product;
+
+	enum Type {
+		Type_tRNA, Type_rRNA, Type_MiscRNA, Type_MiscFeature, Type_Protein
+	} type;
 };
 
 class FeatureProtein : public Feature {
 public:
 	FeatureProtein(CfgList* d);
+	Feature* Clone();
 
 	string proteinID, translation; 
 	int codonStart;
@@ -30,9 +36,6 @@ public:
 	~Genome();
 
 	void PrintInfo();
-
-	mvec<FeatureProtein*> proteins;
-	mvec<Feature*> tRNA, rRNA, misc_RNA, misc_feature;
 
 	// all features combined
 	mvec<Feature*> genes;
