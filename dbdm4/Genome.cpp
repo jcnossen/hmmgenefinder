@@ -33,16 +33,16 @@ Genome::Genome(std::string file)
 	members_ptr(proteins, &FeatureProtein::type) |= FeatureProtein::Type_Protein;
 	
 	mvec<Feature*> tRNA = LoadFeatureList<Feature>(features->GetList("tRNA"));
-	members_ptr(tRNA, &Feature::type).ptr_assign(Feature::Type_tRNA);
+	members_ptr(tRNA, &Feature::type) |= Feature::Type_tRNA;
 
 	mvec<Feature*> rRNA = LoadFeatureList<Feature>(features->GetList("rRNA"));
-	members_ptr(rRNA, &Feature::type).ptr_assign(Feature::Type_rRNA);
+	members_ptr(rRNA, &Feature::type) |= Feature::Type_rRNA;
 
 	mvec<Feature*> misc_RNA = LoadFeatureList<Feature>(features->GetList("misc_RNA"));
-	members_ptr(misc_RNA, &Feature::type).ptr_assign(Feature::Type_MiscRNA);
+	members_ptr(misc_RNA, &Feature::type) |= Feature::Type_MiscRNA;
 
 	mvec<Feature*> misc_feature = LoadFeatureList<Feature>(features->GetList("misc_feature"));
-	members_ptr(misc_feature, &Feature::type).ptr_assign(Feature::Type_MiscFeature);
+	members_ptr(misc_feature, &Feature::type) |= Feature::Type_MiscFeature;
 
 	genes = tRNA & rRNA & misc_RNA & misc_feature & proteins;
 

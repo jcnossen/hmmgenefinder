@@ -19,6 +19,12 @@ public:
 	} type;
 };
 
+// Make mvec.clone() use the proper cloning method
+template<> class cloning_device<Feature> {
+public:
+	static Feature* clone(Feature *src) { return src->Clone(); }
+};
+
 class FeatureProtein : public Feature {
 public:
 	FeatureProtein(CfgList* d);

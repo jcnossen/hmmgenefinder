@@ -34,6 +34,13 @@ public:
 	typedef T value_type;
 };
 
+//default cloning: just use copy constructor.
+// use template specialization to create other methods of cloning
+template<typename T> class cloning_device {
+public:
+	static T* clone(T* src) { return new T(*src); }
+};
+
 template<typename T>
 class mvec
 {
@@ -174,7 +181,7 @@ public:
 		mvec r;
 		r.reserve(size());
 		for(iterator i=First;i!=Last;++i)
-			r.push_back(new typename type_traits<T>::value_type(**i));
+			r.push_back(cloning_device<type_traits<T>::value_type>::clone(*i));
 		return r;
 	}
 
