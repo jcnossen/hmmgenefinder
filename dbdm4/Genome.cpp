@@ -8,6 +8,12 @@ int round(float f) { return (int)(f+0.5f); }
 
 static std::string fz(const char* s) { return s?s:""; }
 
+int GeneComparer(Feature* a, Feature* b) {
+	int st_a = std::min(a->indices[0], a->indices[1]);
+	int st_b = std::min(b->indices[0], b->indices[1]);
+	return st_a < st_b;
+}
+
 Genome::Genome(std::string file)
 {
 	filename = file;
@@ -45,6 +51,9 @@ Genome::Genome(std::string file)
 	members_ptr(misc_feature, &Feature::type) |= Feature::Type_MiscFeature;
 
 	genes = tRNA & rRNA & misc_RNA & misc_feature & proteins;
+
+	// sort genes
+	std::sort(genes.begin(), genes.end(), GeneComparer);
 
 	delete d;
 }
@@ -195,7 +204,7 @@ Genome* Genome::GetSubset( int s, int f)
 
 	// shift genes
 	for(int i=1;i<=g->genes.size();++i)
-		g->genes(i)->indices = g->genes(i)->indices - (s-1); // FIXED? it should be the nucleotides before best_position, which is best_position-1
+		g->genes(i)->indices -= s-1; // FIXED? it should be the nucleotides before best_position, which is best_position-1
 
 	return g;
 }
@@ -208,6 +217,24 @@ int Genome::CountGenes( int start, int finish )
 			cnt = cnt + 1;
 	return cnt;
 }
+
+Genome* Genome::GetSubsetByGeneIndex( int first, int last )
+{
+	Feature* f = genes(first);
+	Feature* l = genes(last);
+	return GetSubset(min(f->indices), max(l->indices)+1);
+}
+
+void Genome::PrintGenes()
+{
+	d_trace("Genes: %d\n", genes.size() );
+	for (int i=0;i<genes.size();i++) {
+		Feature* g = genes[i];
+		const char *c = g->indices[1] > g->indices[0] ? " (complementary)" : "";
+		d_trace("[%d, %d]%s: %s\n", min(g->indices), max(g->indices), c, g->gene.c_str() );
+	}
+}
+
 
 FeatureProtein::FeatureProtein( CfgList* d ) : Feature(d)
 {

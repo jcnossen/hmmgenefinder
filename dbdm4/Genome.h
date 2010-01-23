@@ -42,6 +42,7 @@ public:
 	~Genome();
 
 	void PrintInfo();
+	void PrintGenes();
 
 	// all features combined
 	mvec<Feature*> genes;
@@ -55,6 +56,7 @@ public:
 	mvec<Genome*> Split(float wantedRatio=0.5f, int impTh=5);
 
 	Genome* GetSubset(int first, int last);
+	Genome* GetSubsetByGeneIndex(int first, int last);
 
 private:
 
