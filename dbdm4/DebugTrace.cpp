@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include <cstdarg>
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_MSC_VER)
 #define DEBUGTRACE
 #endif
 

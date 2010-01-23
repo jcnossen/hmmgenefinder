@@ -32,7 +32,9 @@ HMMState* HMM::AddState( std::string name, const mvec<float>& emissions )
 	return s;
 }
 
-template<typename T> T* alloc(int n=1) {
+// For allocating GHMM structure memory
+template<typename T> T* alloc(int n=1) 
+{
 	void *d = mes_malloc(sizeof(T) * n);
 	memset(d, 0, sizeof(T) * n);
 	return (T*)d;

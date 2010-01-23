@@ -9,6 +9,19 @@
 #include "HMM.h"
 #include "DNAUtil.h"
 
+
+std::string GetGenicDNA(Genome* genome) 
+{
+	std::string seq;
+	// gather codon stats for genic regions
+	for (int i=0;i<genome->genes.size();i++) {
+		Feature* f = genome->genes[i];
+
+		seq += genome->GetGeneDNA(f);
+	}
+	return seq;
+}
+
 HMM* CreateGenicHMM( Genome* genome )
 {
 	mvec<int> cc(64, 0);
@@ -107,15 +120,11 @@ void TestHMM()
 int main(int argc, char* argv[])
 {
 	try {
-		TestHMM();
-
-		return 0;
-
 		Genome genome ("../data/AE005174.gd");
 		genome.sequence = dna::RandomizeUnknownNT(genome.sequence);
 
 		// select a small piece of genome
-		Genome* piece = genome.GetSubsetByGeneIndex(0, 100);
+		Genome* piece = genome.GetSubsetByGeneIndex(0, 200);
 
 		HMM* genicHMM = CreateGenicHMM(piece);
 
@@ -125,6 +134,9 @@ int main(int argc, char* argv[])
 		Genome *train = tt(1), *test = tt(2);
 
 		genicHMM->BuildModel();
+
+		std::string train_genic = GetGenicDNA(train);
+		genicHMM->BaumWelch(dna::nt2int(train_genic));
 
 		d_trace("Train genome: \n");
 		train->PrintInfo();
