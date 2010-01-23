@@ -31,7 +31,6 @@ void TestHMM()
 	c3->AddEdge(s, 0.1f);
 	s->AddEdge(c1, 0.1f);
 
-	hmm->NormalizeProbabilities();
 	hmm->BuildModel();
 
 	hmm->TestModel();
@@ -41,16 +40,29 @@ void TestHMM()
 	for (int i=0;i<testSeq.size();i++)
 		d_trace("\t[%d]=%d\n", i,testSeq[i]);
 
+	delete hmm;
+
 	getc(stdin);
 }
 
 int main(int argc, char* argv[])
 {
 	try {
+
+		TestHMM();
+
+		return 0;
+
 		Genome genome ("../data/AE005174.gd");
 
-		genome.PrintGenes();
+		std::string seq = genome.sequence.substr(0, 1000);
+		seq = dna::RandomizeUnknownNT(seq);
+		mvec<int> cc = dna::CodonCount(seq);
 
+		return 0;
+	//	genome.PrintGenes();
+
+		// select a small piece of genome
 		Genome* piece = genome.GetSubsetByGeneIndex(1, 400);
 
 		piece->PrintInfo();

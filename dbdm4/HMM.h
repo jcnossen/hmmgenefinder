@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DNAUtil.h"
+
 using std::string;
 
 typedef state GHMM_State;
@@ -25,32 +27,35 @@ public:
 
 class HMM {
 public:
-	HMM() {}
+	HMM() { ghmm_mdl = 0; }
 	~HMM();
 
 	// add a state with nucleotide emissions set to 0
 	HMMState* AddState(string name) { return AddState(name, mvec<float>()); }
 	HMMState* AddState(string name, const mvec<float>& emission);
 
-	void NormalizeProbabilities();
-
 	mvec<HMMState*> states;
 
-	// setup GHMM model structure
-	void BuildModel();
 	void TestModel();
 	// generate a random sequence based on model
 	// BuildModel needs to be done first
 	mvec<int> GenerateSequence(int len);
 
-	static mvec<const char*> GetGenicCodons();
-	static mvec<const char*> GetStartCodons();
-	static mvec<const char*> GetStopCodons();
-
 	void AddStopCodons();
 	void AddStartCodons();
 
+	void MergeHMM(HMM* hmm);
+
+	// setup GHMM model structure
+	void BuildModel();
+
 protected:
-	GHMM_Model *ghmm_mdl; // ghmm model structure
+	void NormalizeProbabilities();
+
+	GHMM_Model *ghmm_mdl;
 };
 
+class HMM_Intergenic : public HMM
+{
+
+};

@@ -72,6 +72,8 @@ public:
 	mvec(size_t s) { First=Last=End=0; resize(s); }
 	mvec(const mvec<T>& c) { First=Last=End=0; set(c); }
 	mvec(T* first, size_t count) { First=Last=End=0; insert(0, first, first+count); }
+	template<typename TSrc>
+	mvec(TSrc* begin_, TSrc* end_) { First=Last=End=0; insert(0, begin_, end_); }
 	~mvec() { erase(begin(),end()); MFree(First,End-First); First=End=Last=0; }
 
 	iterator begin() { return First; }

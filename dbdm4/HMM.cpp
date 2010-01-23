@@ -44,10 +44,13 @@ struct IndexEdge {
 	float prob;
 };
 
+
 // Setup GHMM model structure
 void HMM::BuildModel()
 {
-	GHMM_Model* mdl = alloc<GHMM_Model>();
+	NormalizeProbabilities();
+
+	GHMM_Model * mdl = alloc<GHMM_Model>();
 	ghmm_mdl = mdl;
 
 	mdl->M = 4;
@@ -120,31 +123,6 @@ void HMM::BuildModel()
 	}
 }
 
-
-mvec<const char*> HMM::GetGenicCodons()
-{
-	static const char* genicCodons[] = {
-		"AAA", "AAC", "AAT", "AAG", "ACA", "ACC", "ACT", "ACG", "ATA", "ATC", "ATT", "ATG",
-		"AGA", "AGC", "AGT", "AGG", "CAA", "CAC", "CAT", "CAG", "CCA", "CCC", "CCT", "CCG",
-		"CTA", "CTC", "CTT", "CTG", "CGA", "CGC", "CGT", "CGG", "TAC", "TAT", "TCA", "TCC",
-		"TCT", "TCG", "TTA", "TTC", "TTG", "TTT", "TGC", "TGT", "TGG", "GAA", "GAC", "GAT",
-		"GAG", "GCA", "GCC", "GCT", "GCG", "GTA", "GTC", "GTT", "GTG", "GGA", "GGC", "GGT", "GGG"
-	};
-	return mvec<const char*>(genicCodons, sizeof(genicCodons)/sizeof(char*));
-}
-
-mvec<const char*> HMM::GetStartCodons()
-{
-	static const char* startCodons[] = {"ATG", "GTG", "TTG"};
-	return mvec<const char*>(startCodons, sizeof(startCodons)/sizeof(char*));
-}
-
-mvec<const char*> HMM::GetStopCodons()
-{
-	static const char *stopCodons[] = {"TAA", "TGA", "TAG"};
-	return mvec<const char*>(stopCodons, sizeof(stopCodons)/sizeof(char*));
-}
-
 // Normalize all state output probabilities
 void HMM::NormalizeProbabilities()
 {
@@ -209,106 +187,10 @@ mvec<int> HMM::GenerateSequence( int len )
 	sequence_free(&seq);
 	return r;
 }
-// 
-//         % Returns start codon statistics for given sequence
-//         % Input:
-//         %       seq                    - sequence with annotated genes
-//         %       traditionalNucleotides - boolean switch to return only
-//         %                                genes with traditional nucleotides
-//         %       traditionalCodons      - boolean switch to return only
-//         %                                genes with traditional start and
-//         %                                stop codons
-//         %       length3                - boolean switch to return only
-//         %                                genes with length devisible by 3
-//         % Output:
-//         %       startC                 - array with codon statistics for
-//         %                                start codons
-//         %       stopC                  - array with codon statistics for
-//         %                                stop codons
-//         function [startC, stopC] = get_start_stop_statistics(seq, traditionalNucleotides, length3, traditionalCodons)
-//             startC = zeros([16 16 16]);
-//             stopC = zeros([16 16 16]);
-//             n = length(seq.gene);
-//             for i = 1:n
-//                 st = seq.gene(i).Indices(1);
-//                 fn = seq.gene(i).Indices(2);
-//                 len = abs(fn - st) + 1;
-//                 if (~length3 || mod(len, 3) == 0)
-//                     rev = false;
-//                     if (st < fn)
-//                         start = seq.Sequence(st:st + 2);
-//                         stop = seq.Sequence(fn - 2:fn);
-//                         gene = seq.Sequence(st:fn);
-//                     else
-//                         start = seq.Sequence(st - 2:st);
-//                         stop = seq.Sequence(fn:fn + 2);
-//                         gene = seqrcomplement(seq.Sequence(fn:st));
-//                         rev = true;
-//                     end
-//                     
-//                     if (~traditionalNucleotides || sum(nt2int(gene) > 4) == 0)
-//                         if (rev == true)
-//                             start = seqrcomplement(start);
-//                             stop = seqrcomplement(stop);
-//                         end
-//                         if (~traditionalCodons || (HMM.is_start(start) && HMM.is_stop(stop)))
-//                             startC(nt2int(start(1)), nt2int(start(2)), nt2int(start(3))) = startC(nt2int(start(1)), nt2int(start(2)), nt2int(start(3))) + 1;
-//                             stopC(nt2int(stop(1)), nt2int(stop(2)), nt2int(stop(3))) = stopC(nt2int(stop(1)), nt2int(stop(2)), nt2int(stop(3))) + 1;
-//                         end
-//                     end
-//                 end
-//             end
-//         end
 
-// 
-        //         % Adds stop codons to the model
-        //         function [] = add_stop(obj)
-        //             id1(1) = obj.add_state('stop_TAA_TGA_1', HMM.get_emission_prob_for_nucleotide('T'));
-        //             count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
-        //             count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
-        //             count_both = count_TAA + count_TGA;
-        //             id1(2) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
-        //             id1(3) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
-        //             obj.add_edge(id1(1), id1(2), 1);
-        //             obj.add_edge(id1(2), id1(3), 1);
-        //             
-        //             id2(1) = obj.add_state('stop_TAG_1', HMM.get_emission_prob_for_nucleotide('T'));
-        //             id2(2) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
-        //             id2(3) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
-        //             
-        //             obj.add_edge(id2(1), id2(2), 1);
-        //             obj.add_edge(id2(2), id2(3), 1);
-        // 
-        // %              % Single entry point to stop codons!
-        // %              id_main = obj.add_state('stop_T', HMM.get_emission_prob_for_nucleotide('T'));
-        // %               
-        // %              count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
-        // %              count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
-        // %              count_both = count_TAA + count_TGA;
-        // %              id1(1) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
-        // %              id1(2) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
-        // %              obj.add_edge(id1(1), id1(2), 1);
-        // %              
-        // %              count_TAG = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('G'));
-        // %              id2(1) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
-        // %              id2(2) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
-        // %              obj.add_edge(id2(1), id2(2), 1);
-        // %               
-        // %              % Now to link single entry point to 2 stop codon models
-        // %              count_all = count_both + count_TAG;
-        // %              obj.add_edge(id_main, id1(1), count_both / count_all);
-        // %              obj.add_edge(id_main, id2(1), count_TAG / count_all);
-        //         end
-        //         
-        //         % Adds start codons to the model
-        //         function [] = add_start(obj)
-        //             count_ATG = obj.start_codon_stats(nt2int('A'), nt2int('T'), nt2int('G'));
-        //             count_GTG = obj.start_codon_stats(nt2int('G'), nt2int('T'), nt2int('G'));
-        //             count_TTG = obj.start_codon_stats(nt2int('T'), nt2int('T'), nt2int('G'));
-        //             count_all = count_ATG + count_GTG + count_TTG;
-        //             id(1) = obj.add_state('start_codons_AGT', (HMM.get_emission_prob_for_nucleotide('A') * count_ATG + HMM.get_emission_prob_for_nucleotide('T') * count_TTG + HMM.get_emission_prob_for_nucleotide('G') * count_GTG) ./ count_all);
-        //             id(2) = obj.add_state('start_codons_T', HMM.get_emission_prob_for_nucleotide('T'));
-        //             id(3) = obj.add_state('start_codons_G', HMM.get_emission_prob_for_nucleotide('G'));
-        //             obj.add_edge(id(1), id(2), 1);
-        //             obj.add_edge(id(2), id(3), 1);
-//         end
+void HMM::MergeHMM( HMM* hmm )
+{
+	states &= hmm->states;
+	hmm->states.clear();
+}
+
