@@ -39,6 +39,9 @@ public:
 	// setup GHMM model structure
 	void BuildModel();
 	void TestModel();
+	// generate a random sequence based on model
+	// BuildModel needs to be done first
+	mvec<int> GenerateSequence(int len);
 
 	static mvec<const char*> GetGenicCodons();
 	static mvec<const char*> GetStartCodons();

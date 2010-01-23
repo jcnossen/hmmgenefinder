@@ -27,6 +27,11 @@ void TestHMM()
 
 	hmm->TestModel();
 
+	mvec<int> testSeq = hmm->GenerateSequence(20);
+	d_trace("Test sequence (length %d)\n", testSeq.size());
+	for (int i=0;i<testSeq.size();i++)
+		d_trace("\t[%d]=%d\n", i,testSeq[i]);
+
 	getc(stdin);
 }
 

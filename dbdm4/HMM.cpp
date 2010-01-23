@@ -190,7 +190,6 @@ void HMM::AddStartCodons()
 
 void HMM::TestModel()
 {
-
 	fprintf(stdout,"transition matrix:\n");
 	model_A_print(stdout,ghmm_mdl,""," ","\n");
 	fprintf(stdout,"observation symbol matrix:\n");
@@ -199,6 +198,16 @@ void HMM::TestModel()
 	sequence_t *seq = model_generate_sequences(ghmm_mdl,0,20,1,100);
 	sequence_print(stdout, seq);
 	sequence_free(&seq);
+}
+
+mvec<int> HMM::GenerateSequence( int len )
+{
+	mvec<int> r;
+
+	sequence_t *seq = model_generate_sequences(ghmm_mdl,0,len,1,100);
+	r = mvec<int>(seq->seq[0], len);
+	sequence_free(&seq);
+	return r;
 }
 // 
 //         % Returns start codon statistics for given sequence
