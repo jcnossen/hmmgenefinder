@@ -7,7 +7,8 @@
 
 void HMMState::AddEdge( HMMState* s, float prob )
 {
-	edges.push_back( Edge(prob, s) );
+	outputs.push_back(Edge(prob, s));
+	s->inputs.push_back(Edge(1.0f, this));
 }
 
 
@@ -43,7 +44,6 @@ struct IndexEdge {
 	float prob;
 };
 
-
 // Setup GHMM model structure
 void HMM::BuildModel()
 {
@@ -68,20 +68,6 @@ void HMM::BuildModel()
 	for(int i=0;i<states.size();i++)
 		stateToIndex[states[i]]=i;
 
-	// generate input lists for each state (only outputs are stored in the edges)
-	mvec< mvec< IndexEdge > > stateInputs;
-	stateInputs.resize(states.size());
-	for(int i=0;i<states.size();i++) {
-		for (int j=0;j<states[i]->edges.size();j++) {
-			HMMState::Edge& edge = states[i]->edges[j];
-			int stateIndex = stateToIndex[edge.dst];
-			IndexEdge ie;
-			ie.index = i;
-			ie.prob = edge.prob;
-			stateInputs[stateIndex].push_back(ie);
-		}
-	}
-
 	// fill state info
 	for(int i=0;i<states.size();i++) {
 		HMMState* src = states[i];
@@ -100,25 +86,22 @@ void HMM::BuildModel()
 		dst->pi = 1.0f; // initial probability (TODO) ?
 
 		// Build state inputs
-		mvec<IndexEdge> &inputs = stateInputs[i];
+		mvec<HMMState::Edge> &inputs = src->inputs;
 		dst->in_states = inputs.size();
 		dst->in_a = alloc<double>(inputs.size());
 		dst->in_id = alloc<int>(inputs.size());
 
-		// normalize inputs
-		float invTotalProb = 1.0f / sum(members(inputs, &IndexEdge::prob));
-
 		for (int j=0;j<inputs.size();j++) {
-			dst->in_a[j]=inputs[j].prob * invTotalProb;
-			dst->in_id[j]=inputs[j].index;
+			dst->in_a[j]= inputs[j].prob;
+			dst->in_id[j]= stateToIndex[ inputs[j].dst ];
 		}
 
 		// Build state outputs
-		dst->out_states = src->edges.size();
+		dst->out_states = src->outputs.size();
 		dst->out_a = alloc<double>(dst->out_states);
 		dst->out_id = alloc<int>(dst->out_states);
-		for (int j =0 ;j<src->edges.size();j++) {
-			HMMState::Edge& e = src->edges[j];
+		for (int j =0 ;j<src->outputs.size();j++) {
+			HMMState::Edge& e = src->outputs[j];
 			dst->out_a[j] = e.prob;
 			dst->out_id[j] = stateToIndex[e.dst];
 		}
@@ -134,30 +117,16 @@ void HMM::NormalizeProbabilities()
 		if (!st.emissions.empty())
 			st.emissions /= sum( st.emissions );
 
-		float invEdgeProbSum = 1.0f / sum( members(st.edges, &HMMState::Edge::prob) );
-		for (int j=0;j<st.edges.size();j++)
-			st.edges[j].prob *= invEdgeProbSum;
+		float invEdgeProbSum = 1.0f / sum( members(st.outputs, &HMMState::Edge::prob) );
+		for (int j=0;j<st.outputs.size();j++)
+			st.outputs[j].prob *= invEdgeProbSum;
+
+		invEdgeProbSum = 1.0f / sum( members(st.inputs, &HMMState::Edge::prob) );
+		for (int j=0;j<st.inputs.size();j++)
+			st.inputs[j].prob *= invEdgeProbSum;
 	}
 }
 
-	// 
-	// 	% Adds stop codons to the model
-	// 		function [] = add_stop(obj)
-	// 		id1(1) = obj.add_state('stop_TAA_TGA_1', HMM.get_emission_prob_for_nucleotide('T'));
-	// 	count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
-	// 	count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
-	// 	count_both = count_TAA + count_TGA;
-	// 	id1(2) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
-	// 	id1(3) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
-	// 	obj.add_edge(id1(1), id1(2), 1);
-	// 	obj.add_edge(id1(2), id1(3), 1);
-	// 
-	// 	id2(1) = obj.add_state('stop_TAG_1', HMM.get_emission_prob_for_nucleotide('T'));
-	// 	id2(2) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
-	// 	id2(3) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
-	// 
-	// 	obj.add_edge(id2(1), id2(2), 1);
-	// 	obj.add_edge(id2(2), id2(3), 1);
 
 void HMM::TestModel()
 {
@@ -213,7 +182,35 @@ mvec<int> HMM::ViterbiPath( const mvec<int>& nt )
 	return path;
 }
 
-void HMM::Forward()
+
+void HMM::BaumWelch( const mvec<int>& seq )
 {
+	sequence_t* st = sequence_calloc(1);
+	st->seq[0] = alloc<int>(seq.size());
+	std::copy(seq.begin(), seq.end(), st->seq[0]);
+	st->seq_len[0] = seq.size();
+
+	int maxStep = 300;
+	reestimate_baum_welch_nstep(ghmm_mdl, st, maxStep, EPS_ITER_BW);
+	CopyParametersFromModel();
+
+	sequence_free(&st);
+}
+
+// copy the GHMM data back into ours
+void HMM::CopyParametersFromModel()
+{
+	for(int i=0;i<ghmm_mdl->N;i++) {
+		HMMState *dst = states[i];
+		GHMM_State *src = &ghmm_mdl->s[i];
+
+		for (int j=0;j<dst->outputs.size();j++) {
+			d_trace("%s.outputs[%d] Old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
+			dst->outputs[j].prob = src->out_a[j];
+		}
+
+		for (int j=0;j<dst->inputs.size();j++)
+			dst->inputs[j].prob = src->in_a[j];
+	}
 }
 

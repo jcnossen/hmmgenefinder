@@ -395,25 +395,25 @@ OPERATOR_IMPL(&&, l_and)
 
 #undef OPERATOR_IMPL
 
-#define OPERATOR_IMPL(SYM, OP) \
+#define OPERATOR_IMPL(SYM) \
 template<typename A, typename B> inline mvec<A>& operator SYM(mvec<A>& a, const mvec<B>& b) { \
 	if (b.size() != a.size())		\
 		throw std::invalid_argument("mvec sizes do not match for elementwise operation"); \
 	for (int i=0;i<a.size();i++) \
-		a[i] = mvec_ops::OP<A, B>::apply(a[i],b[i]); \
+		a[i] SYM b[i]; \
 	return a; \
 } \
 template<typename A, typename B> \
 inline mvec<A>& operator SYM(mvec<A>& a, const B& b) { \
 	for (int i=0;i<a.size();i++) \
-		a[i] = mvec_ops::OP<A, B>::apply(a[i],b); \
+		a[i] SYM b; \
 	return a; \
 }
 
-OPERATOR_IMPL(+=, add)
-OPERATOR_IMPL(-=, sub)
-OPERATOR_IMPL(*=, mul)
-OPERATOR_IMPL(/=, div)
+OPERATOR_IMPL(+=)
+OPERATOR_IMPL(-=)
+OPERATOR_IMPL(*=)
+OPERATOR_IMPL(/=)
 
 #undef OPERATOR_IMPL
 

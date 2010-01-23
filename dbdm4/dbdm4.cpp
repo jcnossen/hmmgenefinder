@@ -83,16 +83,18 @@ void TestHMM()
 
 	//hmm->TestModel();
 
-	mvec<int> testSeq = hmm->GenerateSequence(50);
+	mvec<int> testSeq = hmm->GenerateSequence(1000);
 	d_trace("Test sequence (length %d)\n", testSeq.size());
- 	for (int i=0;i<testSeq.size();i++)
- 		d_trace("\t[%d]=%d\n", i,testSeq[i]);
+//  	for (int i=0;i<testSeq.size();i++)
+//  		d_trace("\t[%d]=%d\n", i,testSeq[i]);
+
+	hmm->BaumWelch(testSeq);
 
 	mvec<int> viterbiPath = hmm->ViterbiPath(testSeq);
 
-	d_trace("Viterbi path (%d): \n", viterbiPath.size());
-	for(int i=0;i<viterbiPath.size();i++)
-		d_trace("State: %s\n", hmm->states[viterbiPath[i]]->name.c_str());
+// 	d_trace("Viterbi path (%d): \n", viterbiPath.size());
+// 	for(int i=0;i<viterbiPath.size();i++)
+// 		d_trace("State: %s\n", hmm->states[viterbiPath[i]]->name.c_str());
 
 	delete hmm;
 

@@ -92,6 +92,9 @@ CodonType GetCodonType( int id )
 	static int codonMap[64] = {-1};
 
 	if (codonMap[0]<0) {
+		for(int i=0;i<64;i++)
+			codonMap[i] = Codon_Genic;
+
 		for (int i=0;i<sizeof(startc)/sizeof(char*);i++) {
 			codonMap[ Codon(startc[i]).GetID() ] = Codon_Start;
 		}

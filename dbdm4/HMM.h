@@ -21,7 +21,8 @@ public:
 
 	void AddEdge(HMMState* s, float prob);
 
-	mvec<Edge> edges;
+	mvec<Edge> inputs;
+	mvec<Edge> outputs;
 	string name;
 	mvec<float> emissions;
 };
@@ -48,12 +49,13 @@ public:
 	// setup GHMM model structure
 	void BuildModel();
 
-	void Forward();
-
+	// train, and feed back into HMMState's
+	void BaumWelch(const mvec<int>& seq);
 	mvec<int> ViterbiPath(const mvec<int>& nt);
 
 protected:
 	void NormalizeProbabilities();
+	void CopyParametersFromModel(); // copy from ghmm_mdl
 
 	GHMM_Model *ghmm_mdl;
 };
