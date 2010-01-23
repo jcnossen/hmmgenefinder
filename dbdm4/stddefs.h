@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <cassert>
+#include <map>
 
 #ifdef _MSC_VER
 // disable some annoying warning
@@ -110,7 +111,8 @@ template<typename T> void SafeDeleteArray(T& item) {
 // Delete all items in a container of pointers
 template<typename T> void DeleteAll(T& items) {
 	for(typename T::iterator i=items.begin();	i!=items.end();	++i) {
-		delete (*i);
+		if((*i)!=NULL)
+			delete (*i);
 		*i = NULL;
 	}
 	items.clear();

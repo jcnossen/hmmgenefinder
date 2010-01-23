@@ -69,7 +69,9 @@ protected:
 	inline static ptr_t RMove (ptr_t f, ptr_t l, ptr_t r) { for(r+=(l--)-f;l>=f;l--,r--) { Constr(r,*l); Destr(l); } return r; }
 public:
 	mvec() { First=Last=End=0; }
+	mvec(size_t s) { First=Last=End=0; resize(s); }
 	mvec(const mvec<T>& c) { First=Last=End=0; set(c); }
+	mvec(T* first, size_t count) { First=Last=End=0; insert(0, first, first+count); }
 	~mvec() { erase(begin(),end()); MFree(First,End-First); First=End=Last=0; }
 
 	iterator begin() { return First; }
@@ -85,7 +87,7 @@ public:
 	void clear() {erase(First,Last);}
 	void reserve(size_t n) 
 	{
-		if (n < capacity ()) return;
+		if (!n || n < capacity ()) return;
 		ptr_t New=MAlloc(n);
 		if(size()) Move(First,Last,New);
 		if(First) MFree(First,size());
@@ -151,6 +153,21 @@ public:
 	mvec& operator&=(const TSrcContainer& rhs) {
 		add(rhs.begin(), rhs.end());
 		return *this;
+	}
+
+	template<typename B>
+	mvec<T> operator-() {
+		mvec<T> r; r.reserve(size());
+		for(int i=0;i<size();i++)
+			r[i]=-First[i];
+		return r;
+	}
+
+	mvec<int> operator!() {
+		mvec<T> r; r.reserve(size());
+		for(int i=0;i<size();i++)
+			r[i]=First[i] ? 0 : 1;
+		return r;
 	}
 
 	// C++ style indexing
@@ -352,13 +369,13 @@ public:
 
 
 #define OPERATOR_IMPL(SYM, OP) \
-template<typename T> static typename mvec< typename mvec_ops::OP<T,T>::return_type > operator SYM(const mvec<T>& c, const mvec<T>& v) {	\
+template<typename T> inline typename mvec< typename mvec_ops::OP<T,T>::return_type > operator SYM(const mvec<T>& c, const mvec<T>& v) {	\
 	return operator_helper<T, const mvec<T>&, mvec_ops::OP<T,T> >::apply(c,v);	\
 }	\
-template<typename T, typename B> static typename mvec< typename mvec_ops::OP<T,B>::return_type > operator SYM(const mvec<T>& c, B v) {	\
+template<typename T, typename B> inline typename mvec< typename mvec_ops::OP<T,B>::return_type > operator SYM(const mvec<T>& c, B v) {	\
 	return operator_helper<T, B, mvec_ops::OP<T, B> >::apply(c, v);	\
 }	\
-template<typename T, typename B> static typename mvec< typename mvec_ops::OP<T,B>::return_type> operator SYM(B v, const mvec<T>& c) {	\
+template<typename T, typename B> inline typename mvec< typename mvec_ops::OP<T,B>::return_type> operator SYM(B v, const mvec<T>& c) {	\
 	typedef mvec_ops::rev<T, B, mvec_ops::OP<B,T> > operator_t;	\
 	return operator_helper<T, B, operator_t>(c,v);	\
 }
@@ -373,6 +390,28 @@ OPERATOR_IMPL(>=, ge)
 OPERATOR_IMPL(<=, le)
 OPERATOR_IMPL(||, l_or)
 OPERATOR_IMPL(&&, l_and)
+
+#undef OPERATOR_IMPL
+
+#define OPERATOR_IMPL(SYM, OP) \
+template<typename A, typename B> inline mvec<A>& operator SYM(mvec<A>& a, const mvec<B>& b) { \
+	if (b.size() != a.size())		\
+		throw std::invalid_argument("mvec sizes do not match for elementwise operation"); \
+	for (int i=0;i<a.size();i++) \
+		a[i] = mvec_ops::OP<A, B>::apply(a[i],b[i]); \
+	return a; \
+} \
+template<typename A, typename B> \
+inline mvec<A>& operator SYM(mvec<A>& a, const B& b) { \
+	for (int i=0;i<a.size();i++) \
+		a[i] = mvec_ops::OP<A, B>::apply(a[i],b); \
+	return a; \
+}
+
+OPERATOR_IMPL(+=, add)
+OPERATOR_IMPL(-=, sub)
+OPERATOR_IMPL(*=, mul)
+OPERATOR_IMPL(/=, div)
 
 #undef OPERATOR_IMPL
 

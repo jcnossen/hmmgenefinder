@@ -6,12 +6,35 @@
 #include "Genome.h"
 
 #include "math.h"
+#include "HMM.h"
 
+
+int random() { return rand(); }
+void srandom(unsigned int s) { srand(s); }
+
+
+void TestHMM()
+{
+	HMM *hmm = new HMM();
+
+	float f[] = { 0.2f, 0.8f, 0.0f, 1.0f };
+	HMMState* s = hmm->AddState("coinflip", mvec<float>(f, 4));
+
+	s->AddEdge(s, 0.8f);
+
+	hmm->NormalizeProbabilities();
+	hmm->BuildModel();
+
+	hmm->TestModel();
+
+	getc(stdin);
+}
 
 int main(int argc, char* argv[])
 {
 	try {
-		Genome genome ("../data/AE005174.gd");
+		TestHMM();
+/*		Genome genome ("../data/AE005174.gd");
 
 		genome.PrintInfo();
 
@@ -23,7 +46,7 @@ int main(int argc, char* argv[])
 		d_trace("Test genome: \n");
 		test->PrintInfo();
 
-		DeleteAll(tt);
+		DeleteAll(tt);*/
 	}
 	catch (ContentException e) {
 		d_trace("Exception: %s\n", e.what());
