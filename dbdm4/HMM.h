@@ -1,6 +1,7 @@
+/*
+HMM class, wraps the GHMM into some easier usable interface
+*/
 #pragma once
-
-#include "DNAUtil.h"
 
 using std::string;
 
@@ -41,29 +42,18 @@ public:
 	// BuildModel needs to be done first
 	mvec<int> GenerateSequence(int len);
 
-	void AddStopCodons();
-	void AddStartCodons();
-
 	void MergeHMM(HMM* hmm);
 	void ListStates();
 
 	// setup GHMM model structure
 	void BuildModel();
 
+	void Forward();
+
+	mvec<int> ViterbiPath(const mvec<int>& nt);
+
 protected:
 	void NormalizeProbabilities();
 
 	GHMM_Model *ghmm_mdl;
 };
-
-class Genome;
-
-class HMM_SimpleGenic : public HMM {
-public:
-	HMM_SimpleGenic(Genome* genome);
-
-	void Train(Genome* train);
-
-	HMMState* center;
-};
-

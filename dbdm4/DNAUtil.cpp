@@ -25,13 +25,15 @@ int nt2int( char v )
 	 throw ContentException(SPrintf("Invalid char passed to nt2int:%c",v));
 }
 
-mvec<int> nt2int( std::string v )
+mvec<int> nt2int( const std::string& v )
 {
 	mvec<int> r(v.size());
 	for (int x=0;x<v.size();x++)
 		r[x]=nt2int(v[x]);
 	return r;
 }
+
+
 
 std::string SeqComplement( std::string dna )
 {

@@ -48,6 +48,9 @@ struct IndexEdge {
 void HMM::BuildModel()
 {
 	NormalizeProbabilities();
+	
+	if (ghmm_mdl) 
+		model_free(&ghmm_mdl);
 
 	GHMM_Model * mdl = alloc<GHMM_Model>();
 	ghmm_mdl = mdl;
@@ -137,8 +140,6 @@ void HMM::NormalizeProbabilities()
 	}
 }
 
-void HMM::AddStopCodons()
-{
 	// 
 	// 	% Adds stop codons to the model
 	// 		function [] = add_stop(obj)
@@ -158,15 +159,9 @@ void HMM::AddStopCodons()
 	// 	obj.add_edge(id2(1), id2(2), 1);
 	// 	obj.add_edge(id2(2), id2(3), 1);
 
-}
-
-void HMM::AddStartCodons()
-{
-
-}
-
 void HMM::TestModel()
 {
+	assert(ghmm_mdl);
 	fprintf(stdout,"transition matrix:\n");
 	model_A_print(stdout,ghmm_mdl,""," ","\n");
 	fprintf(stdout,"observation symbol matrix:\n");
@@ -199,50 +194,26 @@ void HMM::ListStates()
 	}
 }
 
-HMM_SimpleGenic::HMM_SimpleGenic( Genome* genome )
+mvec<int> HMM::ViterbiPath( const mvec<int>& nt )
 {
-	mvec<int> cc(64, 0);
-	
-	// gather codon stats for genic regions
-	for (int i=0;i<genome->genes.size();i++) {
-		Feature* f = genome->genes[i];
+	int *vpath;
+	double log_p;
 
-	//	d_trace("CC: [%d,%d] len: %d: %s\n", f->indices[0], f->indices[1], abs(f->indices[1]-f->indices[0]), f->gene.c_str());
+	assert(ghmm_mdl);
 
-		std::string seq = genome->GetGeneDNA(f);
-		mvec<int> seqCC = dna::CodonCount(seq);
-		cc += seqCC;
-	}
+	vpath = viterbi(ghmm_mdl,(int*) &nt[0], nt.size(), &log_p);
+	// find end of path 
+	int pos = 0;
+	while (vpath[pos] >= 0)
+		pos++;
 
-	dna::ListCodonCounts(cc);
+	mvec<int> path(vpath, vpath + pos);
+	m_free(vpath);
 
-	center = AddState("center");
-
-	for (int i=0;i<64;i++) {
-		dna::Codon c(i);
-		HMMState* prev = 0;
-		mvec<float> emit (4);
-		for (int j=0;j<3;j++) {
-			int nt = dna::nt2int(c.nt[j]);
-
-			for (int x=0;x<4;x++)
-				emit[x] = x==nt?1.0f:0.0f;
-
-			HMMState* n = AddState(std::string(c.nt) + "_" + c.nt[j], emit);
-			if (prev)
-				prev->AddEdge(n, 1.0f);
-			else
-				center->AddEdge(n, cc[i]);
-			prev = n;
-		}
-		//connect last nucleotide back to center
-		prev->AddEdge(center, 1.0f);
-	}
+	return path;
 }
 
-void HMM_SimpleGenic::Train( Genome* train )
+void HMM::Forward()
 {
-
 }
-
 
