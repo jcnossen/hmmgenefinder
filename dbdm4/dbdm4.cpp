@@ -45,30 +45,29 @@ void TestHMM()
 	getc(stdin);
 }
 
+
+
+
 int main(int argc, char* argv[])
 {
 	try {
-
-		TestHMM();
-
-		return 0;
-
 		Genome genome ("../data/AE005174.gd");
-
-		std::string seq = genome.sequence.substr(0, 1000);
-		seq = dna::RandomizeUnknownNT(seq);
-		mvec<int> cc = dna::CodonCount(seq);
-
-		return 0;
-	//	genome.PrintGenes();
+		genome.sequence = dna::RandomizeUnknownNT(genome.sequence);
 
 		// select a small piece of genome
-		Genome* piece = genome.GetSubsetByGeneIndex(1, 400);
+		Genome* piece = genome.GetSubsetByGeneIndex(0, 100);
+
+		HMM_SimpleGenic genic(piece);
+
+		genic.ListStates();
 
 		piece->PrintInfo();
 
 		mvec<Genome*> tt = piece->Split();
 		Genome *train = tt(1), *test = tt(2);
+
+		genic.Train(train);
+		genic.BuildModel();
 
 		d_trace("Train genome: \n");
 		train->PrintInfo();

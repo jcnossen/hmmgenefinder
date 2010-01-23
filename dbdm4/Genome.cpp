@@ -3,6 +3,7 @@
 
 #include "Genome.h"
 #include "CfgParser.h"
+#include "DNAUtil.h"
 
 int round(float f) { return (int)(f+0.5f); }
 
@@ -23,12 +24,12 @@ Genome::Genome(std::string file)
 	const char* seqfile = d->GetLiteral("SequenceFile");
 	std::string seqPath = GetDirPath(file) + seqfile;
 	sequence = ReadTextFile(seqPath);
+	std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::tolower);
 
 	// load global properties
 
 	name = d->GetLiteral("LocusName");
 	topology = d->GetLiteral("LocusTopology");
-	genBankDivision = d->GetLiteral("LocusGenBankDivision");
 	modificationDate = d->GetLiteral("LocusModificationDate");
 	definition = d->GetLiteral("Definition");
 	source = d->GetLiteral("Source");
@@ -193,7 +194,6 @@ Genome* Genome::GetSubset( int s, int f)
 	g->sequence = sequence.substr(s, f-s);
 	g->definition = definition;
 	g->source = source;
-	g->genBankDivision = genBankDivision;
 	g->topology = topology;
 	g->name = name;
 	g->molecularType = molecularType;
@@ -220,8 +220,8 @@ int Genome::CountGenes( int start, int finish )
 
 Genome* Genome::GetSubsetByGeneIndex( int first, int last )
 {
-	Feature* f = genes(first);
-	Feature* l = genes(last);
+	Feature* f = genes[first];
+	Feature* l = genes[last];
 	return GetSubset(min(f->indices), max(l->indices)+1);
 }
 
@@ -235,6 +235,15 @@ void Genome::PrintGenes()
 	}
 }
 
+std::string Genome::GetGeneDNA( Feature* f )
+{
+	assert(max(f->indices) <= sequence.length());
+	assert(min(f->indices) > 0);
+
+	if (f->Complementary())
+		return dna::SeqReverseComplement(sequence.substr(f->indices[1]-1, f->indices[0] - f->indices[1]));
+	return sequence.substr(f->indices[0]-1, f->indices[1] - f->indices[0]);
+}
 
 FeatureProtein::FeatureProtein( CfgList* d ) : Feature(d)
 {

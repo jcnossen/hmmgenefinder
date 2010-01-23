@@ -3,8 +3,7 @@
 
 #include "HMM.h"
 #include "DNAUtil.h"
-
-
+#include "Genome.h"
 
 void HMMState::AddEdge( HMMState* s, float prob )
 {
@@ -180,10 +179,8 @@ void HMM::TestModel()
 
 mvec<int> HMM::GenerateSequence( int len )
 {
-	mvec<int> r;
-
 	sequence_t *seq = model_generate_sequences(ghmm_mdl,0,len,1,100);
-	r = mvec<int>(seq->seq[0], len);
+	mvec<int> r(seq->seq[0], len);
 	sequence_free(&seq);
 	return r;
 }
@@ -193,4 +190,59 @@ void HMM::MergeHMM( HMM* hmm )
 	states &= hmm->states;
 	hmm->states.clear();
 }
+
+void HMM::ListStates()
+{
+	d_trace("%d states:\n");
+	for (int i=0;i<states.size();i++) {
+		d_trace("\tstate [%d]: %s\n", i, states[i]->name.c_str());
+	}
+}
+
+HMM_SimpleGenic::HMM_SimpleGenic( Genome* genome )
+{
+	mvec<int> cc(64, 0);
+	
+	// gather codon stats for genic regions
+	for (int i=0;i<genome->genes.size();i++) {
+		Feature* f = genome->genes[i];
+
+	//	d_trace("CC: [%d,%d] len: %d: %s\n", f->indices[0], f->indices[1], abs(f->indices[1]-f->indices[0]), f->gene.c_str());
+
+		std::string seq = genome->GetGeneDNA(f);
+		mvec<int> seqCC = dna::CodonCount(seq);
+		cc += seqCC;
+	}
+
+	dna::ListCodonCounts(cc);
+
+	center = AddState("center");
+
+	for (int i=0;i<64;i++) {
+		dna::Codon c(i);
+		HMMState* prev = 0;
+		mvec<float> emit (4);
+		for (int j=0;j<3;j++) {
+			int nt = dna::nt2int(c.nt[j]);
+
+			for (int x=0;x<4;x++)
+				emit[x] = x==nt?1.0f:0.0f;
+
+			HMMState* n = AddState(std::string(c.nt) + "_" + c.nt[j], emit);
+			if (prev)
+				prev->AddEdge(n, 1.0f);
+			else
+				center->AddEdge(n, cc[i]);
+			prev = n;
+		}
+		//connect last nucleotide back to center
+		prev->AddEdge(center, 1.0f);
+	}
+}
+
+void HMM_SimpleGenic::Train( Genome* train )
+{
+
+}
+
 

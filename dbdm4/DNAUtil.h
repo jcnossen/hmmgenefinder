@@ -18,6 +18,7 @@ namespace dna
 
 	CodonType GetCodonType(int id);
 	mvec<int> CodonCount(std::string seq);
+	void ListCodonCounts(mvec<int> cc);
 
 	struct Codon
 	{

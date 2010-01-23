@@ -11,6 +11,8 @@ public:
 	Feature(CfgList* d);
 	virtual Feature* Clone();
 
+	bool Complementary() { return indices[0] > indices[1]; }
+
 	mvec<int> indices;
 	std::string gene, note, func, locusTag, product;
 
@@ -44,6 +46,9 @@ public:
 	void PrintInfo();
 	void PrintGenes();
 
+	// returns dna or reverse complement dna
+	std::string GetGeneDNA(Feature* f);
+
 	// all features combined
 	mvec<Feature*> genes;
 	
@@ -51,7 +56,7 @@ public:
 	string filename;
 
 	string name, topology, molecularType;
-	string genBankDivision, modificationDate, source, definition;
+	string modificationDate, source, definition;
 
 	mvec<Genome*> Split(float wantedRatio=0.5f, int impTh=5);
 

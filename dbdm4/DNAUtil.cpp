@@ -10,19 +10,19 @@ std::string RandomizeUnknownNT(std::string dna)
 {
 	for (int i=0;i<dna.size();i++) {
 		char c = dna[i];
-		if (c != 'A' && c != 'C' && c != 'G' && c!='T')
-			dna[i] = ("ACGT") [rand() & 3];
+		if (c != 'a' && c != 'c' && c != 'g' && c!='t')
+			dna[i] = ("acgt") [rand() & 3];
 	}
 	return dna;
 }
 
 int nt2int( char v )
 {
-	 if (v == 'A') return 0;
-	 if (v == 'C') return 1;
-	 if (v == 'G') return 2;
-	 if (v == 'T' || v=='U') return 3;
-	 return 0;
+	 if (v == 'a') return 0;
+	 if (v == 'c') return 1;
+	 if (v == 'g') return 2;
+	 if (v == 't' || v=='u') return 3;
+	 throw ContentException(SPrintf("Invalid char passed to nt2int:%c",v));
 }
 
 mvec<int> nt2int( std::string v )
@@ -35,7 +35,7 @@ mvec<int> nt2int( std::string v )
 
 std::string SeqComplement( std::string dna )
 {
-	char compl_map[5] = {'T', 'G', 'C', 'A' }; // mapped to return values of nt2int
+	char compl_map[5] = {'t', 'g', 'c', 'a' }; // mapped to return values of nt2int
 	std::string compl;
 
 	for (int i=0;i<dna.size();i++)
@@ -45,12 +45,12 @@ std::string SeqComplement( std::string dna )
 
 std::string SeqReverseComplement( std::string dna )
 {
-	return SeqComplement(std::string (dna.rend(), dna.rbegin()));
+	return SeqComplement(std::string (dna.rbegin(), dna.rend()));
 }
 
 char int2nt( int i )
 {
-	const char *c="ACGT";
+	const char *c="acgt";
 	return c[i];
 }
 
@@ -81,8 +81,8 @@ Codon::Codon( const char* v )
 }
 
 
-static const char* startc[] = {"ATG", "GTG", "TTG"};
-static const char *stopc[] = {"TAA", "TGA", "TAG"};
+static const char* startc[] = {"atg", "gtg", "ttg"};
+static const char *stopc[] = {"taa", "tga", "tag"};
 
 
 CodonType GetCodonType( int id )
@@ -102,6 +102,12 @@ CodonType GetCodonType( int id )
 	return (CodonType)codonMap[id];
 }
 
+void ListCodonCounts(mvec<int> cc) {
+	for (int i=0;i<cc.size();i++){
+		d_trace("%s: %d\n", Codon(i).nt, cc[i]);
+	}
+}
+
 mvec<int> CodonCount( std::string seq )
 {
 	mvec<int> r;
@@ -110,7 +116,7 @@ mvec<int> CodonCount( std::string seq )
 	int p = 0;
 	while (p < seq.length() - 2) {
 		Codon c(&seq[p]);
-		//d_trace("Codon:[%d] %s\n", c.GetID(),c.nt); 
+//		d_trace("Codon:[%d] %s\n", c.GetID(),c.nt); 
 		r[c.GetID()] ++;
 		p += 3;
 	}

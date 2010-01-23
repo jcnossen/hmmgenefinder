@@ -45,6 +45,7 @@ public:
 	void AddStartCodons();
 
 	void MergeHMM(HMM* hmm);
+	void ListStates();
 
 	// setup GHMM model structure
 	void BuildModel();
@@ -55,7 +56,14 @@ protected:
 	GHMM_Model *ghmm_mdl;
 };
 
-class HMM_Intergenic : public HMM
-{
+class Genome;
 
+class HMM_SimpleGenic : public HMM {
+public:
+	HMM_SimpleGenic(Genome* genome);
+
+	void Train(Genome* train);
+
+	HMMState* center;
 };
+

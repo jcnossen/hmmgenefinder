@@ -69,7 +69,7 @@ protected:
 	inline static ptr_t RMove (ptr_t f, ptr_t l, ptr_t r) { for(r+=(l--)-f;l>=f;l--,r--) { Constr(r,*l); Destr(l); } return r; }
 public:
 	mvec() { First=Last=End=0; }
-	mvec(size_t s) { First=Last=End=0; resize(s); }
+	mvec(size_t s, const T& v = T()) { First=Last=End=0; resize(s, v); }
 	mvec(const mvec<T>& c) { First=Last=End=0; set(c); }
 	mvec(T* first, size_t count) { First=Last=End=0; insert(0, first, first+count); }
 	template<typename TSrc>
