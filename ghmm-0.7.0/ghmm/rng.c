@@ -50,6 +50,14 @@
 /* The global RNG */
 GHMM_RNG *RNG;
 
+#ifdef _MSC_VER
+	#define SRANDOM(s) srand(s)
+	#define RANDOM() rand()
+#else
+	#define SRANDOM(s) srandom(s)
+	#define RANDOM() random()
+#endif
+
 #ifndef DO_WITH_GSL
 
 ghmm_rng_state rng_state;
@@ -57,12 +65,12 @@ char rng_name[] = "random";
 
 void ghmm_rng_set (GHMM_RNG * r, unsigned long int seed)
 {
-  srandom (seed);
+  SRANDOM(seed);
 }
 
 double ghmm_rng_uniform (GHMM_RNG * r)
 {
-  return ((double) random ()) / (RAND_MAX + 1.0);
+  return ((double) RANDOM ()) / (RAND_MAX + 1.0);
 }
 
 const char *ghmm_rng_name (GHMM_RNG * r)
@@ -72,7 +80,9 @@ const char *ghmm_rng_name (GHMM_RNG * r)
 
 void ghmm_rng_init (void)
 {
+#ifndef _MSC_VER
   initstate (1, rng_state, sizeof (ghmm_rng_state));
+#endif
   RNG = &rng_state;
 }
 

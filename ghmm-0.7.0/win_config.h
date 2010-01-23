@@ -67,11 +67,11 @@
 #undef GSL_HISTOGRAM_SET_RANGES_UNIFORM
 
 /* gsl_sf_erf exists */
-#define HAVE_GSL_SF_ERF
+//#define HAVE_GSL_SF_ERF
 
 /* gsl_sf_erfc exists */
-#define HAVE_GSL_SF_ERFC
+//#define HAVE_GSL_SF_ERFC
 
 /* use GSL functions instead of ghmm interpolation algorithms */
-#define DO_WITH_GSL
+//#define DO_WITH_GSL
 

@@ -38,7 +38,7 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #  include <windows.h>
 #  include <io.h>
 #endif
@@ -93,6 +93,7 @@ static char  mes_enabled = 1;
 static void(*mes_win_fkt)(char*) = NULL;*/
 
 /*---------------------------------------------------------------------------*/
+
 static mes_t *mes_process_get (void)
 {
   int i, tid = getthreadid ();

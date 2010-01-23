@@ -78,7 +78,7 @@ extern "C" {
 /* stuff from sys.h */
 
 #if defined(_WIN32)
-#  define getthreadid()  GetCurrentThreadId()
+#  define getthreadid() GetCurrentThreadId()
 #  define getprocessid() GetCurrentProcessId()
 #else
 #  include <unistd.h>
