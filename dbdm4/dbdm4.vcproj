@@ -185,6 +185,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimpleGenomicTest.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -216,6 +220,10 @@
 			</File>
 			<File
 				RelativePath=".\mvec.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimpleGenomicTest.h"
 				>
 			</File>
 			<File

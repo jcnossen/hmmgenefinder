@@ -41,7 +41,9 @@ public:
 	void TestModel();
 	// generate a random sequence based on model
 	// BuildModel needs to be done first
-	mvec<int> GenerateSequence(int len);
+	mvec<int> GenerateSequence(int len, mvec<int>* stateSeq=0);
+
+	void ParseConfig(std::string file);
 
 	void MergeHMM(HMM* hmm);
 	void ListStates();

@@ -4,6 +4,7 @@
 #include "HMM.h"
 #include "DNAUtil.h"
 #include "Genome.h"
+#include "CfgParser.h"
 
 void HMMState::AddEdge( HMMState* s, float prob )
 {
@@ -143,7 +144,7 @@ void HMM::TestModel()
 	sequence_free(&seq);
 }
 
-mvec<int> HMM::GenerateSequence( int len )
+mvec<int> HMM::GenerateSequence( int len, mvec<int>* stateSequence )
 {
 	sequence_t *seq = model_generate_sequences(ghmm_mdl,0,len,1,100);
 	mvec<int> r(seq->seq[0], len);
@@ -207,12 +208,20 @@ void HMM::CopyParametersFromModel()
 		GHMM_State *src = &ghmm_mdl->s[i];
 
 		for (int j=0;j<dst->outputs.size();j++) {
-			d_trace("%s.outputs[%d] Old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
+			d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
 			dst->outputs[j].prob = src->out_a[j];
 		}
 
-		for (int j=0;j<dst->inputs.size();j++)
+		for (int j=0;j<dst->inputs.size();j++) {
+			d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
 			dst->inputs[j].prob = src->in_a[j];
+		}
 	}
 }
 
+void HMM::ParseConfig(std::string file)
+{
+	CfgList* cfg=CfgList::LoadFile(file.c_str());
+
+
+}
