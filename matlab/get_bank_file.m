@@ -5,7 +5,7 @@
 %        gbk  - reference to gene bank file.
 %
 % ------------------------------------------------------------------------
-% DBDM - 4, Jelmer Cnossen, Alexey Gritsenko, Orr Shomroni
+% DBDM - 4, Jelmer Cnossen | Delft University 2009/2010
 % ------------------------------------------------------------------------
 function gbk = get_bank_file(name)
     file = [name '.gbk'];

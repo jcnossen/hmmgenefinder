@@ -5,9 +5,14 @@
 % Input:
 %       <hmm>     - HMM object representing HMM we would like to test.
 %       <seq>     - sequence with annotated genes.
+%       <maxLen>  - maximum length of a contig (if above this number going
+%                   to be split into two before running Viterbi).
 % Output:
 %       <testRes> - structure with test results
-function [testRes] = test_hmm(hmm, seq)
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
+% ------------------------------------------------------------------------
+function [testRes] = test_hmm(hmm, seq, maxLen, name)
 
     % Finds genes in states array returned by Viterbi
     % Input:
@@ -229,15 +234,86 @@ function [testRes] = test_hmm(hmm, seq)
         score = struct('perfect', norm.perfect + comp.perfect, 'partial80', norm.partial80 + comp.partial80, 'partial50', norm.partial50 + comp.partial50, 'partial0', norm.partial0 + comp.partial0, 'false_positives', norm.false_positives + comp.false_positives, 'false_negatives', norm.false_negatives + comp.false_negatives, 'score', norm.score + comp.score);
     end
 
+    % Returns direct or complement sequence with genes that belong only to
+    % this sequence. Note that if complement strand is requested it gets
+    % reversed and complemented and all gene annotations get normal
+    % indexing (start < end).
+    % Input:
+    %       <seq>    - annotated sequence with genes on both strands
+    %       <direct> - boolean switch determining which sequence to get.
+    %                  True for direct and False for complement
+    % Output:
+    %       <res>    - requested strand with genes that belong to it.
+    function [res] = get_direct_complement(seq, direct)
+        if (direct)
+            res.Sequence = seq.Sequence;
+        else
+            res.Sequence = seqrcomplement(seq.Sequence);
+        end
+        nGD = length(seq.gene);
+        countGD = 0;
+        for iGD = 1:nGD
+            if ((seq.gene(iGD).Indices(1) < seq.gene(iGD).Indices(2)) == direct)
+                countGD = countGD + 1;
+                if (direct)
+                    res.gene(countGD).Indices = seq.gene(iGD).Indices;
+                else
+                    res.gene(countGD).Indices = [seq.gene(iGD).Indices(2) seq.gene(iGD).Indices(1)];
+                end
+            end
+        end
+    end
+    
+    % Recursive function - in case contig is too big, splits contig in
+    % halves and executes itself recursively. If length of contig is OK -
+    % runs Viterbi on contig.
+    % Input:
+    %       <seq>    - contig with annotated genes. Genes are used to split
+    %                  contig into 2 without cutting in the middle of a
+    %                  gene
+    %       <maxLen> - maximum allowed length of a contig
+    %       <d>      - depth of recursion, internal parameter
+    % Output:
+    %       <res>    - results of running Viterbi on the whole contig
+    function [res] = split_viterbi(seq, maxLen, d)
+        if (nargin < 3)
+            d = 1;
+        end
+        len = length(seq.Sequence);
+        if (len > maxLen)
+            [a, b] = split_contig(seq, 0.5);
+            aRes = split_viterbi(a, maxLen, d + 1);
+            bRes = split_viterbi(b, maxLen, d + 1);
+            res = [aRes bRes];
+        else
+            fprintf('   [i] Running Viterbi on subsequence (length %i), depth = %i\n', len, d);
+            res = hmm.viterbi(seq.Sequence);
+        end
+    end
+
     % Simply runs Viterbi and starts matching.
+    % Input:
+    %       <maxLen>  - maximum lenght of a contig to run Viterbi on. If
+    %                   length is above this threshold the contig is going
+    %                   to be split into to with 0.5 ratio
+    %       <name>    - name of the file to save annotation results to.
+    %                   Empty string not to save results.
     % Output:
     %       <score> - performance assesment as given by get_score function
-    function [score] = run_test()
-        fprintf('[i] Running Viterbi algorithm...\n');
-        res = hmm.viterbi(seq.Sequence);
+    function [score] = run_test(maxLen, name)
+        fprintf('[i] Running tests...\n');
+        
+        res = split_viterbi(get_direct_complement(seq, true), maxLen);
         genes = get_genes([], res, false);
-        res = hmm.viterbi(seqrcomplement(seq.Sequence));
+        if (~isempty(name))
+            save([name, '_direct'], 'res', 'genes');
+        end
+        
+        res = split_viterbi(get_direct_complement(seq, false), maxLen);
         genes = get_genes(genes, res, true);
+        if (~isempty(name))
+            save([name, '_complement'], 'res', 'genes');
+        end
         
         score = get_score(genes);
     end
@@ -276,14 +352,34 @@ function [testRes] = test_hmm(hmm, seq)
         end
     end
 
+    % Check some input values
+    if (nargin < 2)
+        error('Not enough parameters. Consult help.');
+    end
+    
+    if (nargin < 3)
+        maxLen = Inf;
+    end
+    
+    if (nargin < 4)
+        name = '';
+    end
+
     % Making Viterbi work =)
     hmm = HMM(hmm);
     hmm.insert_state(1, 'entry_point', zeros(1, 4));
-    hmm.add_edge(1, 'intergenic_dumb', 1); % Change me, that's incorrect...
+    intID = hmm.get_id_by_state_name('intergenic_dumb');
+    if (intID > 0)
+        % simple intergenic model
+        hmm.add_edge(1, intID, 1);
+    else
+        % complex intergenic model
+        % so what to do here?
+    end
     
     fprintf('[i] Fixing non-traditional nucleotides in sequence...\n');
     seq.Sequence = fix_sequence(seq.Sequence);
     
     %testRes = find_best_value();
-    testRes = run_test();
+    testRes = run_test(maxLen, name);
 end

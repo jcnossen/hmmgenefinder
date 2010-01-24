@@ -3,6 +3,9 @@
 %       seq - sequence with annotated genes
 % Output:
 %       res - statistics in form of a structure
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
+% ------------------------------------------------------------------------
 function [res] = nucleotide_stats_report(seq)
 
     % Gets statistics for a single sequence
@@ -41,7 +44,7 @@ function [res] = nucleotide_stats_report(seq)
         res = struct('A', A, 'C', C, 'G', G, 'T', T, 'Total', Sum, 'Percents', Percents);
     end
 
-    res.Whole = get_sequence_stats(seq.Sequence);
+    res.Whole = sum_sequence_stats(get_sequence_stats(seq.Sequence), get_sequence_stats(seqrcomplement(seq.Sequence)));
     fprintf('[+] Got stats for whole genome.\n');
     res.Genic = get_sequence_stats('');
     res.Intergenic = get_sequence_stats('');

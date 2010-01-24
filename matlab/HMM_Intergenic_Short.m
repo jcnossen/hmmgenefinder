@@ -1,6 +1,6 @@
 % HMM class for short complex intergenic model.
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 classdef (ConstructOnLoad = true) HMM_Intergenic_Short < HMM_Intergenic
     methods (Access = public)
@@ -16,13 +16,17 @@ classdef (ConstructOnLoad = true) HMM_Intergenic_Short < HMM_Intergenic
                 trainModel = false;
             end
             seq.Sequence = upper(seq.Sequence);
+            [obj.start_codon_stats, obj.stop_codon_stats] = HMM.get_start_stop_statistics(seq, true, true, true);
             
             seq = HMM_Intergenic.get_intergenic(seq, true, true);
             seq = HMM_Intergenic.select_intergenic(seq, 1, 14);
-            [obj.intergenic_codon_stats, obj.intergenic_nucleotide_stats, obj.GeneCount] = get_statistics(seq, true, false, false, true);
+            [obj.intergenic_codon_stats, obj.intergenic_nucleotide_stats, obj.GeneCount] = get_statistics(seq, true, false, false, false);
             obj.intergenic_probabilities = obj.intergenic_nucleotide_stats(1:4) / sum(obj.intergenic_nucleotide_stats(1:4));
             
+            obj.add_stop;
             obj.construct_model('intergenic_short_', 9);
+            obj.add_start;
+            
             if (trainModel)
                 obj.train(seq);
             end

@@ -1,6 +1,6 @@
 % Class for genic HMM sub-model
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 classdef (ConstructOnLoad = true) HMM_Genic < HMM
     properties (GetAccess = protected, SetAccess = protected)
@@ -82,7 +82,10 @@ classdef (ConstructOnLoad = true) HMM_Genic < HMM
             % We have to do it for both template and complementray sequences
             if (trainModel)
                 seq = HMM.select_genes(seq, true, true, true);
+                obj.insert_state(1, 'entry_point', zeros(1, 4));
+                obj.add_edge(1, 'stop_T', 1);
                 obj.train(seq);
+                obj.delete_state('entry_point');
             end
         end
     end
@@ -177,12 +180,12 @@ classdef (ConstructOnLoad = true) HMM_Genic < HMM
             % Link start
             obj.add_edge('start_codons_G', 'center', 1);
             % Link stop
-%             obj.add_edge('center', 'stop_T', obj.intergenic_prob);
-            first = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A')) + obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
-            second = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('G'));
-            both = first + second;
-            obj.add_edge('center', 'stop_TAA_TGA_1', obj.intergenic_prob * first / both);
-            obj.add_edge('center', 'stop_TAG_1', obj.intergenic_prob * second / both);            
+            obj.add_edge('center', 'stop_T', obj.intergenic_prob);
+%             first = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A')) + obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
+%             second = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('G'));
+%             both = first + second;
+%             obj.add_edge('center', 'stop_TAA_TGA_1', obj.intergenic_prob * first / both);
+%             obj.add_edge('center', 'stop_TAG_1', obj.intergenic_prob * second / both);            
         end
     end
     

@@ -1,6 +1,6 @@
 % Base class for HMM models
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 classdef (ConstructOnLoad = false) HMM < handle
     properties
@@ -66,6 +66,94 @@ classdef (ConstructOnLoad = false) HMM < handle
     end
     
     methods
+        % Returns state id from a state name
+        % Input:
+        %       name - state name
+        % Output:
+        %       id   - corresponding state ID.
+        function [id] = get_id_by_state_name(obj, name)
+            id = 0;
+            for idI = 1:obj.StateCount
+                if (strcmpi(obj.StateNames{idI}, name))
+                    id = idI;
+                    return;
+                end
+            end
+        end
+        
+        
+        % Saves HMM configuration into a file (to transport the model to
+        % GHMM)
+        % Input:
+        %       <name> - name of the file to save data to
+        function [] = save2file(obj, name)
+            id = fopen(name, 'w');
+            fprintf(id, '%i %i\n', length(obj.Symbols), obj.StateCount);
+            for j = 1:4
+                fprintf(id, '%s ', obj.Symbols{j});
+            end
+            fprintf(id, '\n');
+            
+            for i = 1:obj.StateCount
+                for j = 1:4
+                    fprintf(id, '%.5f ', obj.Emit(i, j));
+                end
+                fprintf(id, '\n');
+            end
+            
+            for i = 1:obj.StateCount
+                fprintf(id, '%s\n', obj.StateNames{i});
+            end
+            
+            for i = 1:obj.StateCount
+                tmp = find(obj.Trans(i, :) > 0);
+                n = length(tmp);
+                fprintf(id, '%i ', n);
+                
+                for j = 1:n
+                    fprintf(id, '%i %.5f ', tmp(j), obj.Trans(i, tmp(j)));
+                end
+                fprintf(id, '\n');
+            end
+            fclose(id);
+        end
+
+        % Saves HMM configuration into a file (to transport the model to
+        % GHMM)
+        % Input:
+        %       <name> - name of the file to save data to
+        function [] = save2cfgfile(obj, name)
+            id = fopen(name, 'w');
+%            fprintf(id, 'statecount = %i\n', obj.StateCount);
+            fprintf(id, 'symbols={ ');
+            for j = 1:4
+                fprintf(id, '"%s" ', obj.Symbols{j});
+            end
+            fprintf(id, '}\n');
+
+            fprintf(id, 'states={\n');
+            for i = 1:obj.StateCount
+                fprintf(id, '\tname="%s"\n', obj.StateNames{i});
+                fprintf(id, '\temit={ ');
+                for j = 1:4
+                    fprintf(id, '%.5f ', obj.Emit(i, j));
+                end
+                fprintf(id, '}\n');
+ 
+                tmp = find(obj.Trans(i, :) > 0);
+                n = length(tmp);
+               % fprintf(id, '%i ', n);
+
+                fprintf(id, '\toutputs={\n');
+                for j = 1:n
+                    fprintf(id, '\t\t { index=%i prob=%.5f }\n', tmp(j), obj.Trans(i, tmp(j)));
+                end
+                fprintf(id, '\n}\n');
+            end
+            fprintf(id,'}');
+            fclose(id);
+        end
+        
         % Adds a new state with given name
         % Input:
         %       name - name of the new state
@@ -107,12 +195,31 @@ classdef (ConstructOnLoad = false) HMM < handle
             end
         end
         
+        % Deletes a state from the model
+        % Input:
+        %       <id>  - state ID or name
+        % Output:
+        %       <res> - boolean value of result of deletion
+        function [res] = delete_state(obj, id)
+            if (isa(id, 'char'))
+                id = obj.get_id_by_state_name(id);
+            end
+            res = false;
+            if (id > 0 && id < obj.StateCount)
+                allowed = setdiff(1:obj.StateCount, id);
+                obj.Trans = obj.Trans(allowed, allowed);
+                obj.Emit = obj.Emit(allowed, :);
+                obj.StateCount = obj.StateCount - 1;
+                obj.StateNames = obj.StateNames(allowed);
+                res = true;
+            end
+        end
+        
         % Adds a new edge between two sates
         % Input:
         %       i, j - state ids or state names to define transition i -> j
         %       p    - probability of the transition
         function [] = add_edge(obj, i, j, p)
-            %fprintf('%s -> %s\n', i, j);
             if (isa(i, 'char'))
                 i = obj.get_id_by_state_name(i);
             end
@@ -124,7 +231,7 @@ classdef (ConstructOnLoad = false) HMM < handle
         
         % Trains the model
         % Input:
-        %       seq - training sequenced (with annotated regions)
+        %       <seq> - training sequenced (with annotated regions)
         function [] = train(obj, seq, varargin)
             pemit = zeros(obj.StateCount, length(obj.Symbols));
             ptrans = zeros(obj.StateCount);
@@ -147,7 +254,7 @@ classdef (ConstructOnLoad = false) HMM < handle
             
             seq = HMM.get_training_sequences(seq);
             fprintf('[i] Training model on %i sequences.\n', length(seq));
-            [obj.Trans, obj.Emit] = hmmtrain(seq, obj.Trans, obj.Emit, 'Algorithm', algo, 'Verbose', true, 'Symbols', obj.Symbols, 'Pseudoemissions', pemit, 'Pseudotransitions', ptrans);
+            [obj.Trans, obj.Emit] = my_hmmtrain(seq, obj.Trans, obj.Emit, 'Algorithm', algo, 'Verbose', true, 'Symbols', obj.Symbols, 'Pseudoemissions', pemit, 'Pseudotransitions', ptrans);
         end
         
         % Returns most probable path for given sequence
@@ -219,58 +326,44 @@ classdef (ConstructOnLoad = false) HMM < handle
     end
     
     methods (Access = protected)
-        % Returns state id from a state name
-        % Input:
-        %       name - state name
-        % Output:
-        %       id   - corresponding state ID.
-        function [id] = get_id_by_state_name(obj, name)
-            id = 0;
-            for idI = 1:obj.StateCount
-                if (strcmpi(obj.StateNames{idI}, name))
-                    id = idI;
-                    return;
-                end
-            end
-        end
         
         % Adds stop codons to the model
         function [] = add_stop(obj)
-            id1(1) = obj.add_state('stop_TAA_TGA_1', HMM.get_emission_prob_for_nucleotide('T'));
-            count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
-            count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
-            count_both = count_TAA + count_TGA;
-            id1(2) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
-            id1(3) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
-            obj.add_edge(id1(1), id1(2), 1);
-            obj.add_edge(id1(2), id1(3), 1);
-            
-            id2(1) = obj.add_state('stop_TAG_1', HMM.get_emission_prob_for_nucleotide('T'));
-            id2(2) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
-            id2(3) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
-            
-            obj.add_edge(id2(1), id2(2), 1);
-            obj.add_edge(id2(2), id2(3), 1);
+%             id1(1) = obj.add_state('stop_TAA_TGA_1', HMM.get_emission_prob_for_nucleotide('T'));
+%             count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
+%             count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
+%             count_both = count_TAA + count_TGA;
+%             id1(2) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
+%             id1(3) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
+%             obj.add_edge(id1(1), id1(2), 1);
+%             obj.add_edge(id1(2), id1(3), 1);
+%             
+%             id2(1) = obj.add_state('stop_TAG_1', HMM.get_emission_prob_for_nucleotide('T'));
+%             id2(2) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
+%             id2(3) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
+%             
+%             obj.add_edge(id2(1), id2(2), 1);
+%             obj.add_edge(id2(2), id2(3), 1);
 
-%              % Single entry point to stop codons!
-%              id_main = obj.add_state('stop_T', HMM.get_emission_prob_for_nucleotide('T'));
-%               
-%              count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
-%              count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
-%              count_both = count_TAA + count_TGA;
-%              id1(1) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
-%              id1(2) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
-%              obj.add_edge(id1(1), id1(2), 1);
-%              
-%              count_TAG = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('G'));
-%              id2(1) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
-%              id2(2) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
-%              obj.add_edge(id2(1), id2(2), 1);
-%               
-%              % Now to link single entry point to 2 stop codon models
-%              count_all = count_both + count_TAG;
-%              obj.add_edge(id_main, id1(1), count_both / count_all);
-%              obj.add_edge(id_main, id2(1), count_TAG / count_all);
+             % Single entry point to stop codons!
+             id_main = obj.add_state('stop_T', HMM.get_emission_prob_for_nucleotide('T'));
+              
+             count_TAA = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('A'));
+             count_TGA = obj.stop_codon_stats(nt2int('T'), nt2int('G'), nt2int('A'));
+             count_both = count_TAA + count_TGA;
+             id1(1) = obj.add_state('stop_TAA_TGA_2', (HMM.get_emission_prob_for_nucleotide('A') * count_TAA + HMM.get_emission_prob_for_nucleotide('G') * count_TGA) ./ count_both);
+             id1(2) = obj.add_state('stop_TAA_TGA_3', HMM.get_emission_prob_for_nucleotide('A'));
+             obj.add_edge(id1(1), id1(2), 1);
+             
+             count_TAG = obj.stop_codon_stats(nt2int('T'), nt2int('A'), nt2int('G'));
+             id2(1) = obj.add_state('stop_TAG_2', HMM.get_emission_prob_for_nucleotide('A'));
+             id2(2) = obj.add_state('stop_TAG_3', HMM.get_emission_prob_for_nucleotide('G'));
+             obj.add_edge(id2(1), id2(2), 1);
+              
+             % Now to link single entry point to 2 stop codon models
+             count_all = count_both + count_TAG;
+             obj.add_edge(id_main, id1(1), count_both / count_all);
+             obj.add_edge(id_main, id2(1), count_TAG / count_all);
         end
         
         % Adds start codons to the model
@@ -287,7 +380,7 @@ classdef (ConstructOnLoad = false) HMM < handle
         end
     end
     
-    methods (Access = protected, Static)
+    methods (Access = public, Static)
         
         % Returns only those genes, that fulfil the requirements.
         % Input:

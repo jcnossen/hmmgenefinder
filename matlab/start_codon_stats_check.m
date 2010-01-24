@@ -1,9 +1,12 @@
 % Counts the number of start and stop codons that occur in the middle of a
 % gene.
 % Input:
-%       seq - sequence with annotated genes
+%       <seq> - sequence with annotated genes
 % Output:
-%       res - statistics in form of a structure
+%       <res> - statistics in form of a structure
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
+% ------------------------------------------------------------------------
 function [res] = start_codon_stats_check(seq)
 
     function [res] = sum_stats(a, b)

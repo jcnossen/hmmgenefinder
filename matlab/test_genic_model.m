@@ -5,6 +5,9 @@
 %       <seq> - sequence with annotated genes
 % Output:
 %       [res] - testing results in form of a structure
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
+% ------------------------------------------------------------------------
 function [res] = test_genic_model(hmm, seq)
     hmm = HMM(hmm);
     hmm.insert_state(1, 'entry_point', [0 0 0 0]);

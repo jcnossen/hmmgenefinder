@@ -1,6 +1,6 @@
 % Base class for intergenic HMMs.
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 classdef (ConstructOnLoad = false) HMM_Intergenic < HMM
     properties (GetAccess = protected, SetAccess = protected)

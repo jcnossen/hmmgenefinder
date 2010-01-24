@@ -1,9 +1,12 @@
 % Calculates statistics for start and stop codons used in genes and their
 % frequencies.
 % Input:
-%       seq - sequence with annotated genes
+%       <seq> - sequence with annotated genes
 % Output:
-%       res - statistics in form of a structure
+%       <res> - statistics in form of a structure
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
+% ------------------------------------------------------------------------
 function [res] = start_codon_stats_report(seq)
     n = length(seq.gene);
     for i = 1:length(HMM.Start_Codons)

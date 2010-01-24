@@ -10,7 +10,7 @@
 %      [resHMM]    = object of class HMM, which contains all info required
 %                    to define an HMM.
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 function [resHMM] = build_hmm(seq, modelType, insertion_probability, deletion_probability) 
     % Making life easy
@@ -56,15 +56,10 @@ function [resHMM] = build_hmm(seq, modelType, insertion_probability, deletion_pr
     end
     
     if (modelType == 1) % dumb
-        intergenic_part = HMM_Intergenic_Dumb(seq, false);
+        %intergenic_part = HMM_Intergenic_Dumb(seq, false);
+        intergenic_part = HMM_Intergenic_Dumb(seq, true);
         
         % Merge all into 1 model
-        resHMM = HMM_Merge(intergenic_part, genic_part);
-        intID = 1;
-        
-        % Link models
-        resHMM.add_edge('stop_TAA_TGA_3', 'intergenic_dumb', 1);
-        resHMM.add_edge('stop_TAG_3', 'intergenic_dumb', 1);
-        resHMM.add_edge('intergenic_dumb', 'start_codons_AGT', 1 - intergenic_part.Trans(intID, intID));
+        resHMM = HMM_Merge(genic_part, intergenic_part, [], [true true]);
     end
 end

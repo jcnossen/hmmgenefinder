@@ -3,6 +3,9 @@
 %       seq - sequence with annotated genes
 % Output:
 %       res - statistics in form of a structure
+% ------------------------------------------------------------------------
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
+% ------------------------------------------------------------------------
 function [str] = codon_stats_report_genic(seq)
 
     function [res] = sum_stats(a, b)

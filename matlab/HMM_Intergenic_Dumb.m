@@ -1,12 +1,12 @@
 % HMM class for simple intergenic model.
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 classdef (ConstructOnLoad = true) HMM_Intergenic_Dumb < HMM_Intergenic
     methods (Access = public)
         % Class constructor.
         % Input:
-        %       seq        - sequence with annotaged genes
+        %       seq        - sequence with annotated genes
         %       trainModel - boolean switch telling whether the model
         %                    should be trained
         % Output:
@@ -25,16 +25,20 @@ classdef (ConstructOnLoad = true) HMM_Intergenic_Dumb < HMM_Intergenic
             
             obj.add_stop;
             id = obj.add_state('intergenic_dumb', obj.intergenic_probabilities);
-            obj.add_edge(id, id, 1 - 1 / avg_len);
+            obj.add_edge(id, id, 1 - 1 / (avg_len + 1));
             obj.add_start;
             
             % Link stop and start to intergenic model
             obj.add_edge('stop_TAA_TGA_3', 'intergenic_dumb', 1);
             obj.add_edge('stop_TAG_3', 'intergenic_dumb', 1);
-            obj.add_edge('intergenic_dumb', 'start_codons_AGT', 1 / avg_len);
+            obj.add_edge('intergenic_dumb', 'start_codons_AGT', 1 / (avg_len + 1));
             
             if (trainModel)
+                seq = HMM.select_genes(seq, true, false, false);
+                obj.insert_state(1, 'entry_point', zeros(1, 4));
+                obj.add_edge(1, 'stop_T', 1);
                 obj.train(seq);
+                obj.delete_state('entry_point');
             end
         end
     end

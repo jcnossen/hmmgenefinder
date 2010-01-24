@@ -1,6 +1,6 @@
 % HMM class for long complex intergenic model.
 % ------------------------------------------------------------------------
-% DBDM - 4, Alexey Gritsenko, Jelmer Cnossen, Orr Shomroni
+% DBDM - 4, Alexey Gritsenko | Leiden University 2009/2010
 % ------------------------------------------------------------------------
 classdef (ConstructOnLoad = true) HMM_Intergenic_Long < HMM_Intergenic
     methods (Access = public)
