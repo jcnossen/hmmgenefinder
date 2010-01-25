@@ -49,6 +49,9 @@ public:
 	// returns dna or reverse complement dna
 	std::string GetGeneDNA(Feature* f);
 
+	mvec< mvec<int>* > GetGenicDNA();
+	mvec< mvec<int>* > GetIntergenicDNA();
+
 	// all features combined
 	mvec<Feature*> genes;
 	

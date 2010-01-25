@@ -22,7 +22,7 @@ HMM::~HMM()
 	}
 }
 
-HMMState* HMM::AddState( std::string name, const mvec<float>& emissions )
+HMMState* HMM::AddState( std::string name, const mvec<double>& emissions )
 {
 	HMMState* s = new HMMState(name);
 
@@ -86,7 +86,7 @@ void HMM::BuildModel()
 			for (int j=0;j<mdl->M;j++) 
 				dst->b[j] = src->emissions[j];
 		}
-		dst->pi = initial_state==src ? 1.0f : 0.0f; // initial probability (TODO) ?
+		dst->pi = initial_state==src ? 1.0f : 0.0f; // initial probability
 
 		// Build state inputs
 		mvec<HMMState::Edge> &inputs = src->inputs;

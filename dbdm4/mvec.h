@@ -204,6 +204,13 @@ public:
 		return r;
 	}
 
+	// kronecker delta
+	static mvec<T> kdelta(int n, int pos) {
+		mvec<T> r (n);
+		r[pos] = 1.0f;
+		return r;
+	}
+
 	// overloaded -> to assign to set of pointers
 	template<typename V>
 	void ptr_assign(const mvec<V>& vals) {

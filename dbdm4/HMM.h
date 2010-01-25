@@ -33,8 +33,8 @@ public:
 	~HMM();
 
 	// add a state with nucleotide emissions set to 0
-	HMMState* AddState(string name) { return AddState(name, mvec<float>()); }
-	HMMState* AddState(string name, const mvec<float>& emission);
+	HMMState* AddState(string name) { return AddState(name, mvec<double>()); }
+	HMMState* AddState(string name, const mvec<double>& emission);
 
 	// slow, need to use a map if this is required often
 	HMMState* FindState(string name); 

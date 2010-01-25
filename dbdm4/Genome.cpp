@@ -245,6 +245,32 @@ std::string Genome::GetGeneDNA( Feature* f )
 	return sequence.substr(f->indices[0]-1, f->indices[1] - f->indices[0]);
 }
 
+mvec< mvec<int>* > Genome::GetGenicDNA()
+{
+	mvec<mvec<int>*> dna(genes.size());
+	for (int i=0;i<genes.size();i++)
+		dna[i] = new mvec<int>(dna::nt2int(GetGeneDNA(genes[i])));
+	return dna;
+}
+
+mvec< mvec<int>* > Genome::GetIntergenicDNA()
+{
+	mvec< mvec<int>* > dna;
+	// find spaces between genes
+	int last = 1;
+	for (int i=0;i<=genes.size();i++) {
+		int min_ = (i==genes.size()) ? sequence.size() : min(genes[i]->indices);
+		if (last < min_) {
+			string seq = sequence.substr(last-1, min_ - last);
+			dna.push_back(new mvec<int>(dna::nt2int(seq)));
+		}
+		if (i<genes.size())
+			last = max(genes[i]->indices);
+	}
+	return dna;
+}
+
+
 FeatureProtein::FeatureProtein( CfgList* d ) : Feature(d)
 {
 	codonStart = d->GetInt("codon_start");

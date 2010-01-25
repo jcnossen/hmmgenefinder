@@ -10,9 +10,18 @@ HMM* CreateIntergenicHMM( Genome* genome )
 	// create an intergenic sequence
 	std::string intergenic;
 
-	for (int i=0;i<genome->genes.size();i++) {
-		Feature* f = genome->genes[i];
+	HMM* hmm = new HMM();
+
+	HMMState* center = hmm->AddState("ig_center");
+
+	HMMState* ntstates[4];
+	for (int i=0;i<4;i++) {
+		ntstates[i] = hmm->AddState("ig_" + dna::int2nt(i), mvec<double>::kdelta(4, i));
+		ntstates[i]->AddEdge(center, 1.0f);
+		center->AddEdge(ntstates[i], 1.0f);
 	}
+
+	hmm->BuildModel();
 
 	return 0;
 }
@@ -42,7 +51,7 @@ HMM* CreateGenicHMM( Genome* genome )
 	for (int i=0;i<64;i++) {
 		dna::Codon c(i);
 		HMMState* prev = 0;
-		mvec<float> emit (4);
+		mvec<double> emit (4);
 		for (int j=0;j<3;j++) {
 			int nt = dna::nt2int(c.nt[j]);
 

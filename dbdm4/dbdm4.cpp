@@ -15,13 +15,13 @@ void TestHMM()
 {
 	HMM *hmm = new HMM();
 
-	float s_e[] = { 1,1,1,1 }; // random emissions
-	float c1_e[] = { 0,1,0,0 }; // always 1
-	float c3_e[] = { 0,0,0,1 }; // always 3
+	double s_e[] = { 1,1,1,1 }; // random emissions
+	double c1_e[] = { 0,1,0,0 }; // always 1
+	double c3_e[] = { 0,0,0,1 }; // always 3
 
-	HMMState* s = hmm->AddState("rnd", mvec<float>(s_e, 4));
-	HMMState* c1 = hmm->AddState("c1", mvec<float>(c1_e, 4));
-	HMMState* c3 = hmm->AddState("c3", mvec<float>(c3_e, 4));
+	HMMState* s = hmm->AddState("rnd", mvec<double>(s_e, 4));
+	HMMState* c1 = hmm->AddState("c1", mvec<double>(c1_e, 4));
+	HMMState* c3 = hmm->AddState("c3", mvec<double>(c3_e, 4));
 
 	// Edges to self
 	s->AddEdge(s, 0.9f); // 0.9 chance it stays random
@@ -75,13 +75,15 @@ mvec< mvec<int>* > load_sequence_set(string file)
 	return results;
 }
 
+HMM* CreateGenicHMM( Genome* genome );
+
 void TestGenomic()
 {
 	Genome genome ("../bin/AE005174.gd");
 	genome.sequence = dna::RandomizeUnknownNT(genome.sequence);
 
 	// select a small piece of genome
-	Genome* piece = genome.GetSubsetByGeneIndex(0, 150);
+	Genome* piece = genome.GetSubsetByGeneIndex(0, 50);
 	mvec<Genome*> tt = piece->Split();
 	Genome *train = tt(1), *test_genome = tt(2);
 	d_trace("Train genome: \n");
@@ -89,8 +91,13 @@ void TestGenomic()
 	d_trace("Test genome: \n");
 	test_genome->PrintInfo();
 
+	HMM *hmm = CreateGenicHMM(train);
+	mvec< mvec<int>* > seqDNA = train->GetGenicDNA();
+	hmm->BaumWelch(seqDNA);
+
 	delete piece;
 	DeleteAll(tt);
+	DeleteAll(seqDNA);
 
 }
 
@@ -106,6 +113,11 @@ void PrintHelp()
 int main(int argc, char* argv[])
 {
 	try {
+		TestGenomic();
+
+		
+
+		return 0;
 		int cmd = -1;
 
 		if (argc < 4) {
