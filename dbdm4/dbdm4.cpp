@@ -79,7 +79,7 @@ HMM* CreateGenicHMM( Genome* genome );
 
 void TestGenomic()
 {
-	Genome genome ("../bin/AE005174.gd");
+	Genome genome ("../data/AE005174.gd");
 	genome.sequence = dna::RandomizeUnknownNT(genome.sequence);
 
 	// select a small piece of genome
@@ -92,12 +92,16 @@ void TestGenomic()
 	test_genome->PrintInfo();
 
 	HMM *hmm = CreateGenicHMM(train);
+	hmm->BuildModel();
+
 	mvec< mvec<int>* > seqDNA = train->GetGenicDNA();
 	hmm->BaumWelch(seqDNA);
 
 	delete piece;
 	DeleteAll(tt);
 	DeleteAll(seqDNA);
+
+	getc(stdin);
 
 }
 
@@ -113,6 +117,8 @@ void PrintHelp()
 int main(int argc, char* argv[])
 {
 	try {
+		TestGenomic();
+		return 0;
 		int cmd = -1;
 
 		if (argc < 4) {

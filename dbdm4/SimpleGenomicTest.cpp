@@ -69,6 +69,8 @@ HMM* CreateGenicHMM( Genome* genome )
 		prev->AddEdge(center, 1.0f);
 	}
 
+	hmm->initial_state = center;
+
 	return hmm;
 }
 

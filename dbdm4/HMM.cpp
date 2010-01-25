@@ -216,12 +216,12 @@ void HMM::CopyParametersFromModel()
 		GHMM_State *src = &ghmm_mdl->s[i];
 
 		for (int j=0;j<dst->outputs.size();j++) {
-	//		d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
+		//	d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
 			dst->outputs[j].prob = src->out_a[j];
 		}
 
 		for (int j=0;j<dst->inputs.size();j++) {
-//			d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
+			//d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
 			dst->inputs[j].prob = src->in_a[j];
 		}
 	}
