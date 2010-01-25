@@ -144,7 +144,7 @@ void HMM::TestModel()
 	sequence_free(&seq);
 }
 
-mvec<int> HMM::GenerateSequence( int len, mvec<int>* stateSequence )
+mvec<int> HMM::GenerateSequence( int len )
 {
 	sequence_t *seq = model_generate_sequences(ghmm_mdl,0,len,1,100);
 	mvec<int> r(seq->seq[0], len);
@@ -186,14 +186,18 @@ mvec<int> HMM::ViterbiPath( const mvec<int>& nt )
 }
 
 
-void HMM::BaumWelch( const mvec<int>& seq )
+void HMM::BaumWelch( const mvec< mvec<int>* >& sequences )
 {
-	sequence_t* st = sequence_calloc(1);
-	st->seq[0] = alloc<int>(seq.size());
-	std::copy(seq.begin(), seq.end(), st->seq[0]);
-	st->seq_len[0] = seq.size();
+	sequence_t* st = sequence_calloc(sequences.size());
 
-	int maxStep = 300;
+	for (int i=0;i<sequences.size();i++) {
+		mvec<int>* seq = sequences[i];
+		st->seq[i] = alloc<int>(seq->size());
+		std::copy(seq->begin(), seq->end(), st->seq[i]);
+		st->seq_len[i] = seq->size();
+	}
+
+	int maxStep = 500;
 	reestimate_baum_welch_nstep(ghmm_mdl, st, maxStep, EPS_ITER_BW);
 	CopyParametersFromModel();
 
@@ -223,5 +227,37 @@ void HMM::ParseConfig(std::string file)
 {
 	CfgList* cfg=CfgList::LoadFile(file.c_str());
 
+//	CfgList* symbols = cfg->GetList("symbols");
 
+	CfgList* stateList = cfg->GetList("states");
+
+	states.resize(stateList->childs.size());
+	for (int i=0;i<stateList->childs.size();i++) {
+		CfgList* st = (CfgList*) stateList->childs[i]->value;
+		states[i] = new HMMState(st->GetLiteral("name", ""));
+	}
+
+	for (int i=0;i<stateList->childs.size();i++) {
+		CfgList* st = (CfgList*) stateList->childs[i]->value;
+
+		CfgList* emit = st->GetList("emit");
+		for (int j=0;j<emit->childs.size();j++)
+			states[i]->emissions.push_back( ((CfgNumeric*) emit->childs[j]->value)->value );
+
+		CfgList* outputs = st->GetList("outputs");
+		for (int j=0;j<outputs->childs.size();j++) {
+			double prob;
+			int index;
+
+			CfgList* outputcfg =  (CfgList*)outputs->childs[j]->value;
+			// assume indices for speed sake
+			index = (int)((CfgNumeric*)outputcfg->childs[0]->value)->value;
+			prob = ((CfgNumeric*)outputcfg->childs[0]->value)->value;
+
+			index --; // matlab eh..
+			assert(index >= 0 && index < states.size());
+			states[i]->AddEdge(states[index], prob);
+		}
+
+	}
 }

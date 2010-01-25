@@ -1,6 +1,7 @@
 #pragma once
 
 class HMM;
+class Genome;
 
 class SimpleGenomicTest {
 public:

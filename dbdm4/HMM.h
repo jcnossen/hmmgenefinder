@@ -41,7 +41,7 @@ public:
 	void TestModel();
 	// generate a random sequence based on model
 	// BuildModel needs to be done first
-	mvec<int> GenerateSequence(int len, mvec<int>* stateSeq=0);
+	mvec<int> GenerateSequence(int len);
 
 	void ParseConfig(std::string file);
 
@@ -52,7 +52,7 @@ public:
 	void BuildModel();
 
 	// train, and feed back into HMMState's
-	void BaumWelch(const mvec<int>& seq);
+	void BaumWelch( const mvec< mvec<int>* >& sequences );
 	mvec<int> ViterbiPath(const mvec<int>& nt);
 
 protected:

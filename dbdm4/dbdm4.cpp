@@ -37,13 +37,10 @@ void TestHMM()
 
 	//hmm->TestModel();
 
-	mvec<int> stateSeq;
-	mvec<int> testSeq = hmm->GenerateSequence(1000, &stateSeq);
+	mvec<int> testSeq = hmm->GenerateSequence(1000);
 	d_trace("Test sequence (length %d)\n", testSeq.size());
 //  	for (int i=0;i<testSeq.size();i++)
 //  		d_trace("\t[%d]=%d\n", i,testSeq[i]);
-
-	hmm->BaumWelch(testSeq);
 
 	mvec<int> viterbiPath = hmm->ViterbiPath(testSeq);
 
@@ -57,32 +54,96 @@ void TestHMM()
 }
 
 
+mvec< mvec<int>* > load_sequence_set(string file)
+{
+	std::string text = ReadTextFile(file);
+	mvec< mvec<int>* > results; 
 
+	int pos = 0;
+	while (pos < text.length()) {
+		int start = pos;
+		while (text[pos] != '\n' && pos < text.length()) 
+			pos ++;
+
+		std::string dnastr(text.begin() + start, text.begin() + (pos-1));
+		dnastr = dna::RandomizeUnknownNT(dnastr);
+		results.push_back( new mvec<int>(dna::nt2int(dnastr)) );
+		
+		pos ++;
+	}
+	return results;
+}
+
+void TestGenomic()
+{
+	Genome genome ("../bin/AE005174.gd");
+	genome.sequence = dna::RandomizeUnknownNT(genome.sequence);
+
+	// select a small piece of genome
+	Genome* piece = genome.GetSubsetByGeneIndex(0, 150);
+	mvec<Genome*> tt = piece->Split();
+	Genome *train = tt(1), *test_genome = tt(2);
+	d_trace("Train genome: \n");
+	train->PrintInfo();
+	d_trace("Test genome: \n");
+	test_genome->PrintInfo();
+
+	delete piece;
+	DeleteAll(tt);
+
+}
+
+void PrintHelp()
+{
+	d_trace("HMMUtil <options> <hmmfile> <sequencefile>\n"
+		"Options:\n"
+		"-viterbi\tReturn viterbi path of given sequences\n"
+		"-bw\t\tTrain model using Baum Welch\n"
+		);
+}
 
 int main(int argc, char* argv[])
 {
 	try {
-		Genome genome ("../data/AE005174.gd");
-		genome.sequence = dna::RandomizeUnknownNT(genome.sequence);
+		int cmd = -1;
 
-		// select a small piece of genome
-		Genome* piece = genome.GetSubsetByGeneIndex(0, 150);
+		if (argc < 4) {
+			PrintHelp();
+			return 0;
+		}
 
-		SimpleGenomicTest test;
+		if (!STRCASECMP(argv[1], "-bw"))
+			cmd = 1;
+		else if (!STRCASECMP(argv[1], "-viterbi"))
+			cmd = 2;
+		else {
+			PrintHelp();
+			return 0;
+		}
 
-		mvec<Genome*> tt = piece->Split();
-		Genome *train = tt(1), *test_genome = tt(2);
-		d_trace("Train genome: \n");
-		train->PrintInfo();
-		d_trace("Test genome: \n");
-		test_genome->PrintInfo();
+		std::string hmmFile = argv[2];
+		std::string seqFile = argv[3];
 
-		test.Build();
-		test.Train(train);
+		HMM* hmm = new HMM();
+		hmm->ParseConfig(hmmFile);
+		hmm->BuildModel();
 
+		mvec< mvec<int> *> sequences = load_sequence_set(seqFile);
 
-		delete genicHMM;
-		DeleteAll(tt);
+		if (cmd == 1) {
+			hmm->BaumWelch(sequences);
+		}
+		if (cmd == 2) {
+			for (int i=0;i<sequences.size();i++) {
+				mvec<int> vp = hmm->ViterbiPath(*sequences[i]);
+				printf("%d\n", vp.size());
+				for (int j=0;j<vp.size();j++)
+					printf("%d ", vp[j]);
+				printf("\n");
+			}
+		}
+
+		DeleteAll(sequences);
 	}
 	catch (ContentException e) {
 		d_trace("Exception: %s\n", e.what());

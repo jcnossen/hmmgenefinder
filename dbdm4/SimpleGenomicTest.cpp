@@ -3,15 +3,18 @@
 #include "SimpleGenomicTest.h"
 
 #include "HMM.h"
+#include "Genome.h"
 
 HMM* CreateIntergenicHMM( Genome* genome )
 {
 	// create an intergenic sequence
 	std::string intergenic;
 
-	for (int i=0;i<genomes->genes.size();i++) {
-		Feature* f = genomes->genes[i];
+	for (int i=0;i<genome->genes.size();i++) {
+		Feature* f = genome->genes[i];
 	}
+
+	return 0;
 }
 
 HMM* CreateGenicHMM( Genome* genome )

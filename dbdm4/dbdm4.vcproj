@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="dbdm4"
 	ProjectGUID="{39298927-7030-4D22-9B51-89B51D56585A}"
 	RootNamespace="dbdm4"
@@ -63,6 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="../ghmm-0.7.0/lib/ghmm_d.lib kernel32.lib"
+				OutputFile="../bin/hmmutil_d.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -138,6 +139,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="../ghmm-0.7.0/lib/ghmm.lib kernel32.lib user32.lib"
+				OutputFile="../bin/hmmutil.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
