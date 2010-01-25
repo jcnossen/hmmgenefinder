@@ -113,6 +113,9 @@ void HMM::BuildModel()
 	}
 	mdl->model_type = haveSilent ? kSilentStates : 0; // enable silent states
 
+	int r = model_check(mdl);
+	if (r != 0)
+		d_trace("model is invalid according to model_check\n");
 }
 
 // Normalize all state output probabilities
