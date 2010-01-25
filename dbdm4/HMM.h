@@ -37,7 +37,7 @@ public:
 	HMMState* AddState(string name, const mvec<double>& emission);
 
 	// slow, need to use a map if this is required often
-	HMMState* FindState(string name); 
+	HMMState* FindState(string name);
 
 	mvec<HMMState*> states;
 
@@ -47,6 +47,7 @@ public:
 	mvec<int> GenerateSequence(int len);
 
 	void ParseConfig(std::string file);
+	void OutputModel(string file=string());
 
 	void MergeHMM(HMM* hmm);
 	void ListStates();

@@ -111,14 +111,13 @@ void PrintHelp()
 		"Options:\n"
 		"-viterbi\tReturn viterbi path of given sequences\n"
 		"-bw\t\tTrain model using Baum Welch\n"
+		"-o\tSet output file (default stdout)\n"
 		);
 }
 
 int main(int argc, char* argv[])
 {
 	try {
-		TestGenomic();
-		return 0;
 		int cmd = -1;
 
 		if (argc < 4) {
@@ -126,11 +125,23 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
-		if (!STRCASECMP(argv[1], "-bw"))
-			cmd = 1;
-		else if (!STRCASECMP(argv[1], "-viterbi"))
-			cmd = 2;
-		else {
+		std::string outputfile, startstate;
+		mvec<const char*> params;
+		for (int i=1;i<argc;i++) {
+			if (argv[i][0] == '-') {
+				if (!STRCASECMP(argv[i], "-bw"))
+					cmd = 1;
+				else if (!STRCASECMP(argv[i], "-viterbi"))
+					cmd = 2;
+				else if (!STRCASECMP(argv[i], "-o") && i<argc-1)
+					outputfile = argv[++i];
+				else if (!STRCASECMP(argv[i], "-start") && i<argc-1)
+					startstate = argv[++i];
+			} else
+				params.push_back(argv[i]);
+		}
+
+		if (cmd < 0) {
 			PrintHelp();
 			return 0;
 		}
@@ -140,13 +151,22 @@ int main(int argc, char* argv[])
 
 		HMM* hmm = new HMM();
 		hmm->ParseConfig(hmmFile);
-		hmm->initial_state = hmm->FindState("start_codons_AGT");
+//		hmm->initial_state = hmm->states[0]; // hmm->FindState("start_codons_AGT");
+		if (!startstate.empty()) {
+			hmm->initial_state = hmm->FindState(startstate);
+			if (!hmm->initial_state) {
+				d_trace("Invalid start state: %s", startstate.c_str());
+				return-1;
+			}
+		} else
+			hmm->initial_state = hmm->states[0];
 		hmm->BuildModel();
 
 		mvec< mvec<int> *> sequences = load_sequence_set(seqFile);
 
 		if (cmd == 1) {
 			hmm->BaumWelch(sequences);
+			hmm->OutputModel(outputfile);
 		}
 		if (cmd == 2) {
 			for (int i=0;i<sequences.size();i++) {
