@@ -4,9 +4,7 @@ function [] = save_training_sequences(genome, file)
     f = fopen(file,'w');
     for i=1:length(seq)
         fwrite(f, cell2mat(seq{i}));
-        if i==length(seq)
-            fwrite(f, '\n');
-        end
+        fprintf(f,'\n');
     end
     fclose(f);
 end
