@@ -375,8 +375,9 @@ function [testRes] = test_hmm(hmm, seq, maxLen, name)
     else
         stopID(1) = hmm.get_id_by_state_name('stop_TAA_TGA_3');
         stopID(2) = hmm.get_id_by_state_name('stop_TAG_3');
-        %
-        % so what to do here?
+        startIDs = unique([find(hmm.Trans(stopID(1), :) > 0) find(hmm.Trans(stopID(2), :) > 0)]);
+        nStartIDs = length(startIDs);
+        hmm.Trans(1, startIDs) = 1 / nStartIDs;
     end
     
     fprintf('[i] Fixing non-traditional nucleotides in sequence...\n');
