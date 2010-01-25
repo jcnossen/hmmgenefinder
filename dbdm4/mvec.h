@@ -142,6 +142,11 @@ public:
 	const T& back() const { return *(Last-1); }
 	T& front() { return *First; }
 	const T& front() const { return *First; }
+	int index_of(const T& v) {
+		for(int i=0;i<size();i++)
+			if(First[i] == v) return i;
+		return -1;
+	}
 
 	// concatenation
 	template<typename TSrcContainer>

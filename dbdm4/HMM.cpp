@@ -109,6 +109,7 @@ void HMM::BuildModel()
 			dst->out_id[j] = stateToIndex[e.dst];
 		}
 	}
+
 }
 
 // Normalize all state output probabilities
@@ -192,6 +193,9 @@ mvec<int> HMM::ViterbiPath( const mvec<int>& nt )
 
 void HMM::BaumWelch( const mvec< mvec<int>* >& sequences )
 {
+	if (!ghmm_mdl)
+		BuildModel();
+
 	sequence_t* st = sequence_calloc(sequences.size());
 
 	for (int i=0;i<sequences.size();i++) {
@@ -216,12 +220,14 @@ void HMM::CopyParametersFromModel()
 		GHMM_State *src = &ghmm_mdl->s[i];
 
 		for (int j=0;j<dst->outputs.size();j++) {
-		//	d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
+			if (dst->outputs[j].prob != src->out_a[j])
+				d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
 			dst->outputs[j].prob = src->out_a[j];
 		}
 
 		for (int j=0;j<dst->inputs.size();j++) {
-			//d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
+			if (dst->inputs[j].prob != src->in_a[j])
+				d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
 			dst->inputs[j].prob = src->in_a[j];
 		}
 	}
@@ -285,4 +291,51 @@ HMMState* HMM::FindState( string name )
 			return states[i];
 
 	return 0;
+}
+
+void HMM::OutputModel(std::string file)
+{
+	FILE *f;	
+	
+	// map states to indices
+	std::map< HMMState*, int > stateToIndex;
+	for(int i=0;i<states.size();i++)
+		stateToIndex[states[i]]=i;
+
+	if (file.empty())
+		f=stdin;
+	else
+		f = fopen(file.c_str(), "w");
+
+	int initial_state_index = -1;
+	if (initial_state!=0)
+		initial_state_index = states.index_of(initial_state);
+
+	fprintf(f, "%% use eval() to execute\n");
+	fprintf(f, "mdl.StateCount=%d;\n", states.size());
+	fprintf(f, "mdl.InitialState=%d;\n", initial_state_index+1);
+
+	for (int i=0;i<states.size();i++) {
+		HMMState* state = states[i];
+		std::string st = SPrintf("mdl.States(%d).", i+1);
+		const char* prefix = st.c_str();
+		fprintf(f, "%sName='%s';\n",prefix,state->name.c_str());
+		fprintf(f, "%sEmit=[",prefix);
+		for(int j=0;j<state->emissions.size();j++) {
+			fprintf(f, "%f ", state->emissions[j]);
+		}
+		fprintf(f, "];\n");
+		for(int j=0;j<state->outputs.size();j++) {
+			fprintf(f, "%sOutputs(%d).StateIndex = %d;\n", prefix, j+1, stateToIndex[ state->outputs[j].dst ] + 1);
+			fprintf(f, "%sOutputs(%d).Prob = %f;\n", prefix, j+1, state->outputs[j].prob);
+		}
+		for(int j=0;j<state->inputs.size();j++) {
+			fprintf(f, "%sInputs(%d).StateIndex = %d;\n", prefix, j+1, stateToIndex[ state->inputs[j].dst ] + 1);
+			fprintf(f, "%sInputs(%d).Prob = %f;\n", prefix, j+1, state->inputs[j].prob);
+		}
+	}
+	fprintf(f, "mdl");
+
+	if (!file.empty())
+		fclose(f);
 }
