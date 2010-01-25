@@ -113,11 +113,6 @@ void PrintHelp()
 int main(int argc, char* argv[])
 {
 	try {
-		TestGenomic();
-
-		
-
-		return 0;
 		int cmd = -1;
 
 		if (argc < 4) {
