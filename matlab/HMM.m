@@ -152,7 +152,7 @@ classdef (ConstructOnLoad = false) HMM < handle
             end
         end
         
-                % Saves HMM configuration into a file (to transport the model to
+        % Saves HMM configuration into a file (to transport the model to
         % GHMM)
         % Input:
         %       <name> - name of the file to save data to
@@ -184,6 +184,27 @@ classdef (ConstructOnLoad = false) HMM < handle
             end
             fprintf(id,'}');
             fclose(id);
+        end
+        
+        % Load a model code as written by hmmutil
+        % Input:
+        %       mdl: input input, as returned by the generated .m code
+        function [] = load_mdl(obj, mdl)            
+            assert(mdl.StateCount==length(mdl.States));
+            obj.Trans = zeros(mdl.StateCount, mdl.StateCount);
+            obj.Emit = zeros(mdl.StateCount ,4);
+            obj.StateNames = cell(mdl.StateCount);
+            
+            for i=1:length(mdl.StateCount)
+                s=mdl.States(i);
+                
+                for j=1:length(s.Outputs)
+                     obj.Trans(i, s.Outputs(j).StateIndex) = s.Outputs(j).Prob;
+                end
+                
+                obj.StateNames{i} = s.Name;
+                obj.Emit(i, :) = s.Emit;
+            end
         end
         
         % Adds a new state with given name
