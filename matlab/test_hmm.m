@@ -373,7 +373,9 @@ function [testRes] = test_hmm(hmm, seq, maxLen, name)
         % simple intergenic model
         hmm.add_edge(1, intID, 1);
     else
-        % complex intergenic model
+        stopID(1) = hmm.get_id_by_state_name('stop_TAA_TGA_3');
+        stopID(2) = hmm.get_id_by_state_name('stop_TAG_3');
+        %
         % so what to do here?
     end
     
