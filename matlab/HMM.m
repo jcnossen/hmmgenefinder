@@ -133,8 +133,8 @@ classdef (ConstructOnLoad = false) HMM < handle
 
             fprintf(id, 'states={\n');
             for i = 1:obj.StateCount
-                fprintf(id, '\tname="%s"\n', obj.StateNames{i});
-                fprintf(id, '\temit={ ');
+                fprintf(id, '\t{\n\t\tname="%s"\n', obj.StateNames{i});
+                fprintf(id, '\t\temit={ ');
                 for j = 1:4
                     fprintf(id, '%.5f ', obj.Emit(i, j));
                 end
@@ -144,11 +144,11 @@ classdef (ConstructOnLoad = false) HMM < handle
                 n = length(tmp);
                % fprintf(id, '%i ', n);
 
-                fprintf(id, '\toutputs={\n');
+                fprintf(id, '\t\toutputs={\n');
                 for j = 1:n
                     fprintf(id, '\t\t { index=%i prob=%.5f }\n', tmp(j), obj.Trans(i, tmp(j)));
                 end
-                fprintf(id, '\n}\n');
+                fprintf(id, '\n\t}\n}');
             end
             fprintf(id,'}');
             fclose(id);
