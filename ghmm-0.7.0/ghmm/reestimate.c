@@ -813,7 +813,7 @@ int reestimate_baum_welch_nstep (model * mo, sequence_t * sq, int max_step,
 
   /* main loop Baum-Welch-Alg. */
   while (n <= max_step) {
-    
+    printf("[i] Starting iteration %i / %i\n", n, max_step);
     if (1) {
       if (reestimate_one_step(mo, r, sq->seq_number, sq->seq_len, sq->seq,
 			      &log_p, sq->seq_w) == -1) {

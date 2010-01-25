@@ -55,7 +55,8 @@ std::string ReadTextFile( std::string file )
 	// Needs unicode fix?
 	std::string r;
 	r.resize(len);
-	fgets(&r[0], len, f);
+	//fgets(&r[0], len, f);
+	fread(&r[0], 1, len, f);
 	fclose(f);
 	return r;
 }

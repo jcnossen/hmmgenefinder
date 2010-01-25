@@ -63,13 +63,14 @@ void HMM::BuildModel()
 
 	mdl->s = alloc<GHMM_State>(mdl->N);
 	mdl->prior = -1;
-	mdl->model_type = kSilentStates; // enable silent states
 	mdl->silent = alloc<int>(states.size());
 
 	// map states to indices
 	std::map< HMMState*, int > stateToIndex;
 	for(int i=0;i<states.size();i++)
 		stateToIndex[states[i]]=i;
+
+	bool haveSilent = false;
 
 	// fill state info
 	for(int i=0;i<states.size();i++) {
@@ -79,6 +80,7 @@ void HMM::BuildModel()
 		dst->b = alloc<double>(mdl->M);
 		if (src->emissions.empty()) {
 			mdl->silent[i] = 1;
+			haveSilent = true;
 		} else {
 			mdl->silent[i] = 0;
 
@@ -109,6 +111,7 @@ void HMM::BuildModel()
 			dst->out_id[j] = stateToIndex[e.dst];
 		}
 	}
+	mdl->model_type = haveSilent ? kSilentStates : 0; // enable silent states
 
 }
 
@@ -253,15 +256,9 @@ void HMM::ParseConfig(std::string file)
 		CfgList* st = (CfgList*) stateList->childs[i]->value;
 
 		CfgList* emit = st->GetList("emit");
-		bool allzero=true;
 		for (int j=0;j<emit->childs.size();j++) {
 			states[i]->emissions.push_back( ((CfgNumeric*) emit->childs[j]->value)->value );
-			if ( fabs(states[i]->emissions.back()) < 0.0001)
-				allzero=false;
-
 		}
-		if (allzero)
-			states[i]->emissions.clear();
 
 		CfgList* outputs = st->GetList("outputs");
 		for (int j=0;j<outputs->childs.size();j++) {

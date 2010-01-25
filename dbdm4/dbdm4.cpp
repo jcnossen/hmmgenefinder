@@ -57,6 +57,7 @@ void TestHMM()
 mvec< mvec<int>* > load_sequence_set(string file)
 {
 	std::string text = ReadTextFile(file);
+	std::transform(text.begin(), text.end(), text.begin(), tolower);
 	mvec< mvec<int>* > results; 
 
 	int pos = 0;

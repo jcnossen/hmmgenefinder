@@ -103,7 +103,9 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
+				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
