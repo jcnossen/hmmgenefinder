@@ -32,34 +32,42 @@ function [resHMM] = build_hmm(seq, modelType, insertion_probability, deletion_pr
 
     resHMM = [];
     
-    genic_part = HMM_Genic(seq, 'complex', insertion_probability, deletion_probability);
+    fprintf('[i] Build: creating genic model.\n');
+    genic = HMM_Genic(seq, 'complex', insertion_probability, deletion_probability);
+    
     if (modelType == 2) % full
-        intergenic_short_part = HMM_Intergenic_Short(seq, true);
-        intergenic_long_part = HMM_Intergenic_Long(seq, true);
+        fprintf('[i] Build: creating short intergenic model.\n');
+        intergenic_short = HMM_Intergenic_Short(seq, false);
+        fprintf('[i] Build: creating long intergenic model.\n');
+        intergenic_long = HMM_Intergenic_Long(seq, false);
         
-        % Merge all into 1 model
-        resHMM = HMM_Merge(HMM_Merge(genic_part, intergenic_short_part), intergenic_long_part);
+        % Probabilities
+        shortCount = intergenic_short.GeneCount;
+        longCount = intergenic_long.GeneCount;
+        both = shortCount + longCount;
         
-        % Link intergenic -> start codons
-        resHMM.add_edge('intergenic_short_end', 'start_codons_AGT', 1);
-        resHMM.add_edge('intergenic_long_end', 'start_codons_AGT', 1);
+        % Short
+        IDs = [intergenic_short.get_id_by_state_name('stop_TAG_3') intergenic_short.get_id_by_state_name('stop_TAA_TGA_3')];
+        intergenic_short.Trans(IDs, :) = intergenic_short.Trans(IDs, :) .* (shortCount / both);
+        % Long
+        IDs = [intergenic_long.get_id_by_state_name('stop_TAG_3') intergenic_long.get_id_by_state_name('stop_TAA_TGA_3')];
+        intergenic_long.Trans(IDs, :) = intergenic_long.Trans(IDs, :) .* (longCount / both);
         
-        % Link stop codons -> intergenic
-        intID = resHMM.add_state('intergenic_begin', [0 0 0 0]);
         
-        pShort = intergenic_short_part.GeneCount / (intergenic_short_part.GeneCount + intergenic_long_part.GeneCount);
-        pLong = intergenic_long_part.GeneCount / (intergenic_short_part.GeneCount + intergenic_long_part.GeneCount);
-        resHMM.add_edge(intID, 'intergenic_short_begin', pShort);
-        resHMM.add_edge(intID, 'intergenic_long_begin', pLong);
-        resHMM.add_edge('stop_TAA_TGA_3', intID, 1);
-        resHMM.add_edge('stop_TAG_3', intID, 1);
+        % Create intergenic model
+        fprintf('[i] Build: merging long and short intergenic models.\n');
+        intergenic = HMM_Merge(intergenic_long, intergenic_short, [], [false false]);
+        fprintf('[i] Build: merging genic and intergenic models.\n');
+        resHMM = HMM_Merge(genic, intergenic);
     end
     
     if (modelType == 1) % dumb
-        %intergenic_part = HMM_Intergenic_Dumb(seq, false);
-        intergenic_part = HMM_Intergenic_Dumb(seq, true);
+        fprintf('[i] Build: creating intergenic model.\n');
+        intergenic = HMM_Intergenic_Dumb(seq, false);
+        %intergenic = HMM_Intergenic_Dumb(seq, true);
         
         % Merge all into 1 model
-        resHMM = HMM_Merge(genic_part, intergenic_part, [], [true true]);
+        fprintf('[i] Build: merging genic and intergenic models.\n');
+        resHMM = HMM_Merge(genic, intergenic, [], [true true]);
     end
 end

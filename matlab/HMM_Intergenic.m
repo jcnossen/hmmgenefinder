@@ -86,6 +86,24 @@ classdef (ConstructOnLoad = false) HMM_Intergenic < HMM
             res.Sequence = seq.Sequence;
         end
         
+        % Counts number of regions of appropriate length
+        % Input:
+        %       seq    - sequence with annotated regions
+        %       minLen - minimum length for selected regions
+        %       maxLen - maximum length for selected regions
+        % Output:
+        %       ind    - number of regions with requested length
+        function [ind] = count_with_length(seq, minLen, maxLen)
+            ind = 0;
+            len = length(seq.gene);
+            for i = 1:len
+                iterLen = abs(seq.gene(i).Indices(1) - seq.gene(i).Indices(2)) + 1;
+                if (iterLen >= minLen && iterLen <= maxLen)
+                    ind = ind + 1;
+                end
+            end
+        end
+        
         % Constructs intergenic regions from genic regions.
         % Input:
         %       seq               - sequence with annotated genes

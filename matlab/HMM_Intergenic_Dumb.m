@@ -33,6 +33,8 @@ classdef (ConstructOnLoad = true) HMM_Intergenic_Dumb < HMM_Intergenic
             obj.add_edge('stop_TAG_3', 'intergenic_dumb', 1);
             obj.add_edge('intergenic_dumb', 'start_codons_AGT', 1 / (avg_len + 1));
             
+            obj.fix;
+            
             if (trainModel)
                 seq = HMM.select_genes(seq, true, false, false);
                 obj.insert_state(1, 'entry_point', zeros(1, 4));

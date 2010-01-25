@@ -54,6 +54,32 @@ classdef (ConstructOnLoad = false) HMM < handle
             res = ~isempty(found);
         end
         
+        % Returns sequences for training HMM (transforms annotated genes
+        % into cell array of sequences)
+        % Input:
+        %       seq - sequence with annotated genes
+        % Output:
+        %       res - cell array of sequences (to be fed to Viterbi
+        %             algorithm).
+        function [res] = get_training_sequences(seq)
+            n = length(seq.gene);
+            res = cell(0);
+            resCount = 0;
+            for i = 1:n
+                s = min(seq.gene(i).Indices);
+                f = max(seq.gene(i).Indices);
+                str = seq.Sequence(s:f);
+                if (seq.gene(i).Indices(1) > seq.gene(i).Indices(2))
+                    str = seqrcomplement(str);
+                end
+                %int_str = nt2int(str);
+                %if (sum(int_str > 4) == 0) % Traditional only
+                resCount = resCount + 1;
+                res{resCount} = num2cell(str);
+                %end
+            end
+        end
+        
         % Returns true is the codon is a (traditions) stop codon
         % Input:
         %       codon - a string of 3 nucleotide letters
@@ -62,6 +88,51 @@ classdef (ConstructOnLoad = false) HMM < handle
         function [res] = is_stop(codon)
             found = find(strcmpi(codon, HMM.Stop_Codons), 1);
             res = ~isempty(found);
+        end
+        
+        % Returns only those genes, that fulfil the requirements.
+        % Input:
+        %       seq                    - sequence with annotated regions
+        %       traditionalNucleotides - boolean switch to return only
+        %                                genes with traditional nucleotides
+        %       traditionalCodons      - boolean switch to return only
+        %                                genes with traditional start and
+        %                                stop codons
+        %       length3                - boolean switch to return only
+        %                                genes with length devisible by 3
+        % Output:
+        %       res                    - same sequence with annotations
+        %                                kept only for those genes that
+        %                                fulfill the requirements
+        function [res] = select_genes(seq, traditionalNucleotides, traditionalCodons, length3)
+            n = length(seq.gene);
+            geneC = 0;
+            for i = 1:n
+                s = min(seq.gene(i).Indices);
+                f = max(seq.gene(i).Indices);
+                len = f - s + 1;
+                if (~length3 || mod(len, 3) == 0)
+                    str = seq.Sequence(s:f);
+                    if (seq.gene(i).Indices(1) > seq.gene(i).Indices(2))
+                        str = seqrcomplement(str);
+                    end
+                    if (len >= 3)
+                        startCodon = str(1:3);
+                        stopCodon = str(len - 2:len);
+                    else
+                        startCodon = '';
+                        stopCodon = '';
+                    end
+                    if (~traditionalCodons || (HMM.is_start(startCodon) && HMM.is_stop(stopCodon)))
+                        int_str = nt2int(str);
+                        if (~traditionalNucleotides || sum(int_str > 4) == 0)
+                            geneC = geneC + 1;
+                            res.gene(geneC).Indices = seq.gene(i).Indices;
+                        end
+                    end
+                end
+            end
+            res.Sequence = seq.Sequence;
         end
     end
     
@@ -81,56 +152,18 @@ classdef (ConstructOnLoad = false) HMM < handle
             end
         end
         
-        
-        % Saves HMM configuration into a file (to transport the model to
-        % GHMM)
-        % Input:
-        %       <name> - name of the file to save data to
-        function [] = save2file(obj, name)
-            id = fopen(name, 'w');
-            fprintf(id, '%i %i\n', length(obj.Symbols), obj.StateCount);
-            for j = 1:4
-                fprintf(id, '%s ', obj.Symbols{j});
-            end
-            fprintf(id, '\n');
-            
-            for i = 1:obj.StateCount
-                for j = 1:4
-                    fprintf(id, '%.5f ', obj.Emit(i, j));
-                end
-                fprintf(id, '\n');
-            end
-            
-            for i = 1:obj.StateCount
-                fprintf(id, '%s\n', obj.StateNames{i});
-            end
-            
-            for i = 1:obj.StateCount
-                tmp = find(obj.Trans(i, :) > 0);
-                n = length(tmp);
-                fprintf(id, '%i ', n);
-                
-                for j = 1:n
-                    fprintf(id, '%i %.5f ', tmp(j), obj.Trans(i, tmp(j)));
-                end
-                fprintf(id, '\n');
-            end
-            fclose(id);
-        end
-
-        % Saves HMM configuration into a file (to transport the model to
+                % Saves HMM configuration into a file (to transport the model to
         % GHMM)
         % Input:
         %       <name> - name of the file to save data to
         function [] = save2cfgfile(obj, name)
             id = fopen(name, 'w');
-%            fprintf(id, 'statecount = %i\n', obj.StateCount);
             fprintf(id, 'symbols={ ');
             for j = 1:4
                 fprintf(id, '"%s" ', obj.Symbols{j});
             end
             fprintf(id, '}\n');
-
+            
             fprintf(id, 'states={\n');
             for i = 1:obj.StateCount
                 fprintf(id, '\t{\n\t\tname="%s"\n', obj.StateNames{i});
@@ -139,11 +172,10 @@ classdef (ConstructOnLoad = false) HMM < handle
                     fprintf(id, '%.5f ', obj.Emit(i, j));
                 end
                 fprintf(id, '}\n');
- 
+                
                 tmp = find(obj.Trans(i, :) > 0);
                 n = length(tmp);
-               % fprintf(id, '%i ', n);
-
+                
                 fprintf(id, '\t\toutputs={\n');
                 for j = 1:n
                     fprintf(id, '\t\t { index=%i prob=%.5f }\n', tmp(j), obj.Trans(i, tmp(j)));
@@ -380,53 +412,7 @@ classdef (ConstructOnLoad = false) HMM < handle
         end
     end
     
-    methods (Access = public, Static)
-        
-        % Returns only those genes, that fulfil the requirements.
-        % Input:
-        %       seq                    - sequence with annotated regions
-        %       traditionalNucleotides - boolean switch to return only
-        %                                genes with traditional nucleotides
-        %       traditionalCodons      - boolean switch to return only
-        %                                genes with traditional start and
-        %                                stop codons
-        %       length3                - boolean switch to return only
-        %                                genes with length devisible by 3
-        % Output:
-        %       res                    - same sequence with annotations
-        %                                kept only for those genes that
-        %                                fulfill the requirements
-        function [res] = select_genes(seq, traditionalNucleotides, traditionalCodons, length3)
-            n = length(seq.gene);
-            geneC = 0;
-            for i = 1:n
-                s = min(seq.gene(i).Indices);
-                f = max(seq.gene(i).Indices);
-                len = f - s + 1;
-                if (~length3 || mod(len, 3) == 0)
-                    str = seq.Sequence(s:f);
-                    if (seq.gene(i).Indices(1) > seq.gene(i).Indices(2))
-                        str = seqrcomplement(str);
-                    end
-                    if (len >= 3)
-                        startCodon = str(1:3);
-                        stopCodon = str(len - 2:len);
-                    else
-                        startCodon = '';
-                        stopCodon = '';
-                    end
-                    if (~traditionalCodons || (HMM.is_start(startCodon) && HMM.is_stop(stopCodon)))
-                        int_str = nt2int(str);
-                        if (~traditionalNucleotides || sum(int_str > 4) == 0)
-                            geneC = geneC + 1;
-                            res.gene(geneC).Indices = seq.gene(i).Indices;
-                        end
-                    end
-                end
-            end
-            res.Sequence = seq.Sequence;
-        end
-        
+    methods (Access = protected, Static)
         % Return codon emission count for codons in cell array.
         % Input:
         %       stats  - array with codon statistics (as returned by
@@ -454,32 +440,6 @@ classdef (ConstructOnLoad = false) HMM < handle
             p = zeros(1, 4);
             nucNum = nt2int(nuc);
             p(nucNum) = 1;
-        end
-        
-        % Returns sequences for training HMM (transforms annotated genes
-        % into cell array of sequences)
-        % Input:
-        %       seq - sequence with annotated genes
-        % Output:
-        %       res - cell array of sequences (to be fed to Viterbi
-        %             algorithm).
-        function [res] = get_training_sequences(seq)
-            n = length(seq.gene);
-            res = cell(0);
-            resCount = 0;
-            for i = 1:n
-                s = min(seq.gene(i).Indices);
-                f = max(seq.gene(i).Indices);
-                str = seq.Sequence(s:f);
-                if (seq.gene(i).Indices(1) > seq.gene(i).Indices(2))
-                    str = seqrcomplement(str);
-                end
-                %int_str = nt2int(str);
-                %if (sum(int_str > 4) == 0) % Traditional only
-                resCount = resCount + 1;
-                res{resCount} = num2cell(str);
-                %end
-            end
         end
 
         % Returns start codon statistics for given sequence

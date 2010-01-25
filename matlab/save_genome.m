@@ -1,5 +1,8 @@
 % Downloads genome from GenBank and stores it on disk in a text format
 % (one that is a little easier to parse than GBK)
+% ------------------------------------------------------------------------
+% DBDM - 4, Jelmer Cnossen | Delft University 2009/2010
+% ------------------------------------------------------------------------
 function save_genome(data, filename)
     if ischar(data)
         g = get_bank_file(name);
