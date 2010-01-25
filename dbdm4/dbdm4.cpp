@@ -62,14 +62,15 @@ mvec< mvec<int>* > load_sequence_set(string file)
 	int pos = 0;
 	while (pos < text.length()) {
 		int start = pos;
-		while (text[pos] != '\n' && pos < text.length()) 
+		while (isalpha(text[pos]) && pos < text.length()) 
 			pos ++;
 
-		std::string dnastr(text.begin() + start, text.begin() + (pos-1));
+		std::string dnastr = text.substr(start, pos-start-1);
 		dnastr = dna::RandomizeUnknownNT(dnastr);
 		results.push_back( new mvec<int>(dna::nt2int(dnastr)) );
 		
-		pos ++;
+		while (!isalpha(text[pos]) && pos < text.length())
+			pos ++;
 	}
 	return results;
 }

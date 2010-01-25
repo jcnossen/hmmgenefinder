@@ -243,9 +243,6 @@ template<typename T> T min(const mvec<T>& m) {
 	return v;
 }
 template<typename T> T sum(const mvec<T>& m) {
-	if (m.empty())
-		throw std::invalid_argument("sum() called on empty mvec");
-
 	T v=type_traits<T>::zero();
 	for(typename mvec<T>::const_iterator i=m.begin();i!=m.end();++i)
 		v+=*i;

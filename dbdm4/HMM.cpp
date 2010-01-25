@@ -120,13 +120,17 @@ void HMM::NormalizeProbabilities()
 		if (!st.emissions.empty())
 			st.emissions /= sum( st.emissions );
 
-		float invEdgeProbSum = 1.0f / sum( members(st.outputs, &HMMState::Edge::prob) );
+		double invEdgeProbSum = 1.0f / sum( members(st.outputs, &HMMState::Edge::prob) );
 		for (int j=0;j<st.outputs.size();j++)
 			st.outputs[j].prob *= invEdgeProbSum;
 
-		invEdgeProbSum = 1.0f / sum( members(st.inputs, &HMMState::Edge::prob) );
-		for (int j=0;j<st.inputs.size();j++)
-			st.inputs[j].prob *= invEdgeProbSum;
+		if (st.inputs.empty()) {
+			d_trace("warning: state %s has no inputs\n", st.name.c_str());
+		} else {
+			invEdgeProbSum = 1.0f / sum( members(st.inputs, &HMMState::Edge::prob) );
+			for (int j=0;j<st.inputs.size();j++)
+				st.inputs[j].prob *= invEdgeProbSum;
+		}
 	}
 }
 

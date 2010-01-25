@@ -13,9 +13,9 @@ public:
 	HMMState(const string& name) : name(name) {}
 
 	struct Edge {
-		Edge(float P, HMMState* dst) : prob(P), dst(dst) {}
+		Edge(double P, HMMState* dst) : prob(P), dst(dst) {}
 
-		float prob;
+		double prob;
 		HMMState* dst;
 	};
 
@@ -24,7 +24,7 @@ public:
 	mvec<Edge> inputs;
 	mvec<Edge> outputs;
 	string name;
-	mvec<float> emissions;
+	mvec<double> emissions;
 };
 
 class HMM {
