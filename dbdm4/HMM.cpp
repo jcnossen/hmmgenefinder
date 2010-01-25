@@ -86,7 +86,7 @@ void HMM::BuildModel()
 			for (int j=0;j<mdl->M;j++) 
 				dst->b[j] = src->emissions[j];
 		}
-		dst->pi = 1.0f; // initial probability (TODO) ?
+		dst->pi = initial_state==src ? 1.0f : 0.0f; // initial probability (TODO) ?
 
 		// Build state inputs
 		mvec<HMMState::Edge> &inputs = src->inputs;
@@ -216,12 +216,12 @@ void HMM::CopyParametersFromModel()
 		GHMM_State *src = &ghmm_mdl->s[i];
 
 		for (int j=0;j<dst->outputs.size();j++) {
-			d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
+	//		d_trace("%s.outputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->outputs[j].prob, src->out_a[j]);
 			dst->outputs[j].prob = src->out_a[j];
 		}
 
 		for (int j=0;j<dst->inputs.size();j++) {
-			d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
+//			d_trace("%s.inputs[%d] old: %f, new: %f\n", dst->name.c_str(), j, dst->inputs[j].prob, src->in_a[j]);
 			dst->inputs[j].prob = src->in_a[j];
 		}
 	}
@@ -241,12 +241,21 @@ void HMM::ParseConfig(std::string file)
 		states[i] = new HMMState(st->GetLiteral("name", ""));
 	}
 
+	int nEdge=0;
+
 	for (int i=0;i<stateList->childs.size();i++) {
 		CfgList* st = (CfgList*) stateList->childs[i]->value;
 
 		CfgList* emit = st->GetList("emit");
-		for (int j=0;j<emit->childs.size();j++)
+		bool allzero=true;
+		for (int j=0;j<emit->childs.size();j++) {
 			states[i]->emissions.push_back( ((CfgNumeric*) emit->childs[j]->value)->value );
+			if ( fabs(states[i]->emissions.back()) < 0.0001)
+				allzero=false;
+
+		}
+		if (allzero)
+			states[i]->emissions.clear();
 
 		CfgList* outputs = st->GetList("outputs");
 		for (int j=0;j<outputs->childs.size();j++) {
@@ -261,7 +270,19 @@ void HMM::ParseConfig(std::string file)
 			index --; // matlab eh..
 			assert(index >= 0 && index < states.size());
 			states[i]->AddEdge(states[index], prob);
+			nEdge ++;
 		}
 
 	}
+
+	d_trace("Config %s contains %d states and %d edges\n", file.c_str(), states.size(), nEdge);
+}
+
+HMMState* HMM::FindState( string name )
+{
+	for (int i=0;i<states.size();i++)
+		if (states[i]->name == name )
+			return states[i];
+
+	return 0;
 }

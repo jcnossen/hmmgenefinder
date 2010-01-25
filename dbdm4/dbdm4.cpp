@@ -127,6 +127,7 @@ int main(int argc, char* argv[])
 
 		HMM* hmm = new HMM();
 		hmm->ParseConfig(hmmFile);
+		hmm->initial_state = hmm->FindState("start_codons_AGT");
 		hmm->BuildModel();
 
 		mvec< mvec<int> *> sequences = load_sequence_set(seqFile);
@@ -143,6 +144,8 @@ int main(int argc, char* argv[])
 				printf("\n");
 			}
 		}
+
+		getc(stdin);
 
 		DeleteAll(sequences);
 	}

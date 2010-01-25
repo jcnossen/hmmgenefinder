@@ -29,12 +29,15 @@ public:
 
 class HMM {
 public:
-	HMM() { ghmm_mdl = 0; }
+	HMM() { ghmm_mdl = 0; initial_state = 0; }
 	~HMM();
 
 	// add a state with nucleotide emissions set to 0
 	HMMState* AddState(string name) { return AddState(name, mvec<float>()); }
 	HMMState* AddState(string name, const mvec<float>& emission);
+
+	// slow, need to use a map if this is required often
+	HMMState* FindState(string name); 
 
 	mvec<HMMState*> states;
 
@@ -54,6 +57,8 @@ public:
 	// train, and feed back into HMMState's
 	void BaumWelch( const mvec< mvec<int>* >& sequences );
 	mvec<int> ViterbiPath(const mvec<int>& nt);
+
+	HMMState* initial_state;
 
 protected:
 	void NormalizeProbabilities();
